@@ -35,6 +35,8 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build site
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
         run: yarn build
 
       - name: Setup Pages
