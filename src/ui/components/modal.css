@@ -1,0 +1,73 @@
+/*
+ * Responsibility: Styles shared modal primitives.
+ * Includes overlay behavior, dialog sizing variants, and action-row spacing.
+ */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--modal-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-card {
+  width: min(680px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.6rem;
+  background: var(--card-background-color);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.28);
+}
+
+.modal-medium {
+  width: min(820px, calc(100vw - 2rem));
+}
+
+.modal-large {
+  width: min(1060px, calc(100vw - 2rem));
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.modal-header h3 {
+  margin: 0;
+}
+
+.modal-header button {
+  margin-bottom: 0;
+}
+
+.modal-body {
+  padding: 1rem;
+  overflow: auto;
+  max-height: calc(100vh - 9rem);
+}
+
+@media (max-width: 768px) {
+  .modal-backdrop {
+    padding: 0.7rem;
+  }
+
+  .modal-card,
+  .modal-medium,
+  .modal-large {
+    width: calc(100vw - 1.4rem);
+  }
+
+  .modal-body {
+    padding: 0.85rem;
+    max-height: calc(100vh - 8.25rem);
+  }
+}

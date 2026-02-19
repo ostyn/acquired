@@ -1,0 +1,238 @@
+/*
+ * Responsibility: Styles the top turn rail and progression indicators.
+ * Emphasizes phase flow, player order, and quick utility controls.
+ */
+
+.turn-rail {
+  border: 1px solid var(--panel-border);
+  border-radius: 0.55rem;
+  padding: 0.9rem;
+  background: var(--card-background-color);
+  display: grid;
+  gap: 0.85rem;
+}
+
+.turn-rail-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 1fr);
+  gap: 0.8rem;
+  align-items: start;
+}
+
+.turn-rail-summary {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.turn-rail-phase,
+.turn-rail-command {
+  margin: 0;
+}
+
+.turn-rail-phase {
+  font-size: 0.86rem;
+  color: var(--text-subtle);
+}
+
+.turn-rail-draw-discard {
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  justify-self: start;
+  padding: 0.14rem 0.4rem;
+  border: 1px dashed var(--panel-border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  font-size: 0.74rem;
+  color: var(--text-subtle);
+}
+
+.turn-rail-draw-discard strong {
+  font-size: 0.8rem;
+  color: var(--pico-color);
+}
+
+.turn-thinking {
+  margin: 0.15rem 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  color: var(--text-subtle);
+}
+
+.turn-thinking span {
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.22;
+  animation: thinking-pulse 1.15s infinite ease-in-out;
+}
+
+.turn-thinking span:nth-of-type(2) {
+  animation-delay: 0.15s;
+}
+
+.turn-thinking span:nth-of-type(3) {
+  animation-delay: 0.3s;
+}
+
+.turn-rail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.turn-rail-action {
+  margin-bottom: 0;
+}
+
+.turn-order-track {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.turn-chip {
+  margin: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  background: var(--surface-soft);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.turn-chip-current {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px rgba(0, 123, 255, 0.25);
+}
+
+.turn-chip-actor {
+  background: rgba(0, 123, 255, 0.12);
+}
+
+.turn-chip-offline {
+  border-style: dashed;
+  color: var(--text-subtle);
+}
+
+.turn-chip-name {
+  font-weight: 700;
+  font-size: 0.93rem;
+}
+
+.turn-chip-meta {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
+.turn-chain-track {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+}
+
+.turn-chain-card {
+  margin: 0;
+  border: 1px solid var(--panel-border);
+  border-left: 0.45rem solid var(--turn-chain-color, var(--panel-border));
+  border-radius: 0.42rem;
+  padding: 0.44rem 0.5rem;
+  background: var(--surface-soft);
+  display: grid;
+  gap: 0.24rem;
+}
+
+.turn-chain-card-inactive {
+  opacity: 0.9;
+}
+
+.turn-chain-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.turn-chain-safe {
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 0.08rem 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.turn-chain-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.5rem;
+  font-size: 0.77rem;
+  color: var(--text-subtle);
+}
+
+.turn-chain-meta span {
+  white-space: nowrap;
+}
+
+.turn-chain-card-active .turn-chain-meta {
+  color: var(--pico-color);
+}
+
+.turn-chain-buy-btn {
+  margin: 0.08rem 0 0;
+  width: 100%;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.74rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 1024px) {
+  .turn-rail-top {
+    grid-template-columns: 1fr;
+  }
+
+  .turn-rail-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .turn-rail {
+    padding: 0.75rem;
+  }
+
+  .turn-rail-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
+    width: 100%;
+  }
+
+  .turn-rail-action {
+    width: 100%;
+  }
+
+  .turn-order-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .turn-chain-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@keyframes thinking-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translateY(-1px);
+  }
+}

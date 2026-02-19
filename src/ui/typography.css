@@ -1,0 +1,32 @@
+/*
+ * Responsibility: Defines app-wide typography scale overrides for top-level pages.
+ * It normalizes Pico's responsive type ramp to a denser, more game-friendly layout.
+ */
+
+:host {
+  --pico-font-size: 96%;
+}
+
+h1 {
+  --pico-font-size: 1.75rem;
+}
+
+h2 {
+  --pico-font-size: 1.5rem;
+}
+
+h3 {
+  --pico-font-size: 1.28rem;
+}
+
+h4 {
+  --pico-font-size: 1.12rem;
+}
+
+h5 {
+  --pico-font-size: 1rem;
+}
+
+h6 {
+  --pico-font-size: 0.92rem;
+}

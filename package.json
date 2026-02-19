@@ -1,0 +1,28 @@
+{
+  "name": "acquire-p2p",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "yarn@1.22.22",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@picocss/pico": "^2.0.6",
+    "@vaadin/router": "^1.7.5",
+    "lit": "^3.2.1",
+    "mobx": "^6.13.4",
+    "peerjs": "^1.5.4",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "typescript": "^5.7.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}

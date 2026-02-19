@@ -1,0 +1,88 @@
+/*
+ * Responsibility: Declares shared design tokens and global utility styles.
+ * Component styles consume these CSS variables for consistent chain colors and surfaces.
+ */
+
+:root {
+  --chain-tower: #f2c43b;
+  --chain-luxor: #e4394f;
+  --chain-american: #1f3f97;
+  --chain-festival: #1da56f;
+  --chain-worldwide: #7b4a30;
+  --chain-imperial: #c03393;
+  --chain-continental: #27b7d9;
+}
+
+/* Light color scheme (Default) */
+/* Can be forced with data-theme="light" */
+[data-theme='light'],
+:root[data-theme='light'] {
+  color-scheme: light;
+  --text-subtle: var(--pico-muted-color);
+  --surface-soft: #f4f7fc;
+  --panel-border: var(--pico-muted-border-color);
+  --board-empty-bg: #edf2f9;
+  --board-empty-fg: #31415a;
+  --board-border: #c4d0e0;
+  --board-uninc-bg: #b7cbe8;
+  --board-uninc-fg: #0f2a4a;
+  --modal-overlay: rgba(6, 12, 22, 0.72);
+  --tile-confirm-overlay: rgba(15, 23, 42, 0.72);
+  --tile-confirm-text: #f8fafc;
+  --tile-confirm-pill-bg: rgba(15, 23, 42, 0.84);
+  --theme-toggle-bg: rgba(255, 255, 255, 0.92);
+  --theme-toggle-border: rgba(15, 23, 42, 0.22);
+  --theme-toggle-shadow: 0 6px 16px rgba(15, 23, 42, 0.14);
+  --primary: var(--pico-primary);
+  --card-background-color: var(--pico-card-background-color);
+  --muted-color: var(--text-subtle);
+}
+
+/* Dark color scheme (Forced) */
+/* Enabled if forced with data-theme="dark" */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --text-subtle: var(--pico-muted-color);
+  --surface-soft: #111c31;
+  --panel-border: rgba(148, 167, 199, 0.34);
+  --board-empty-bg: #192334;
+  --board-empty-fg: #9aacc8;
+  --board-border: #2e3d57;
+  --board-uninc-bg: #3d5984;
+  --board-uninc-fg: #e7f0ff;
+  --modal-overlay: rgba(3, 8, 15, 0.78);
+  --tile-confirm-overlay: rgba(2, 6, 23, 0.64);
+  --tile-confirm-text: #f8fafc;
+  --tile-confirm-pill-bg: rgba(2, 6, 23, 0.86);
+  --theme-toggle-bg: rgba(8, 16, 30, 0.86);
+  --theme-toggle-border: rgba(148, 167, 199, 0.34);
+  --theme-toggle-shadow: 0 6px 16px rgba(0, 0, 0, 0.36);
+  --primary: var(--pico-primary);
+  --card-background-color: var(--pico-card-background-color);
+  --muted-color: var(--text-subtle);
+}
+
+body {
+  min-height: 100vh;
+  background: var(--pico-background-color);
+  color: var(--pico-color);
+}
+
+main.container {
+  padding-bottom: 4rem;
+}
+
+.grid-2 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.muted {
+  color: var(--text-subtle);
+  opacity: 1;
+}
+
+.small {
+  font-size: 0.8rem;
+}

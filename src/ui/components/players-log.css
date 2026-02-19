@@ -1,0 +1,24 @@
+/*
+ * Responsibility: Styles player tables and log presentation blocks.
+ * Supports scrollable table regions and readable event history lists.
+ */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.players-table {
+  width: max(100%, 700px);
+  margin-bottom: 0;
+}
+
+.players-table th,
+.players-table td {
+  white-space: nowrap;
+}
+
+.log {
+  max-height: 28rem;
+  overflow: auto;
+  font-size: 0.9rem;
+}

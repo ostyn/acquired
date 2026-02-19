@@ -1,0 +1,37 @@
+/*
+ * Responsibility: Styles reusable chain badges and compact chain labels.
+ * Provides a consistent token for chain identity across the UI.
+ */
+
+.chain-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  padding: 0.18rem 0.58rem;
+  background: var(--badge-chain);
+  color: var(--badge-chain-ink, #fff);
+  font-weight: 700;
+  line-height: 1.2;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.chain-badge.compact {
+  padding: 0.13rem 0.45rem;
+  font-size: 0.74rem;
+}
+
+.chain-badge.fallback {
+  background: transparent;
+  color: var(--muted-color);
+  border-color: var(--panel-border);
+}
+
+.chain-badge-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  align-items: center;
+}

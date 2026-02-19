@@ -1,0 +1,94 @@
+/*
+ * Responsibility: Styles lobby-only controls for setup and player management.
+ * Covers host settings forms and player list layout.
+ */
+
+.lobby-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 0.55rem;
+}
+
+.lobby-card-header h3 {
+  margin: 0;
+}
+
+.lobby-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  align-items: stretch;
+  width: 100%;
+}
+
+.lobby-roster-panel {
+  margin: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.45rem;
+  padding: 0.75rem;
+  background: var(--card-background-color);
+}
+
+.lobby-settings-panel {
+  margin: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.45rem;
+  padding: 0.75rem;
+  background: var(--card-background-color);
+}
+
+.lobby-settings-panel h4 {
+  margin-bottom: 0.55rem;
+}
+
+.lobby-settings-panel p {
+  margin-bottom: 0.4rem;
+}
+
+.lobby-rules-note {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--panel-border);
+}
+
+.lobby-settings-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+.lobby-toggle-label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.lobby-toggle-label input[type='checkbox'] {
+  margin: 0;
+}
+
+.player-name-input {
+  margin: 0;
+  min-width: 8rem;
+}
+
+.player-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.add-bot-button {
+  margin-top: 0.4rem;
+}
+
+@media (max-width: 960px) {
+  .lobby-layout {
+    grid-template-columns: 1fr;
+  }
+}

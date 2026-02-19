@@ -1,0 +1,248 @@
+/*
+ * Responsibility: Styles action/decision workspace controls.
+ * Covers tile chips, buy queue chips, and merger disposition forms.
+ */
+
+.hand {
+  --hand-tile-size: 2.25rem;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--hand-tile-size);
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
+}
+
+.hand button {
+  margin-bottom: 0;
+}
+
+.hand .tile-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--hand-tile-size);
+  min-inline-size: var(--hand-tile-size);
+  block-size: var(--hand-tile-size);
+  min-block-size: var(--hand-tile-size);
+  padding: 0.12rem;
+  font-size: 0.82rem;
+  line-height: 1;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transform-origin: center;
+  animation: tile-enter 220ms ease-out;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.hand .tile-chip:hover {
+  transform: translateY(-1px);
+}
+
+.hand .tile-playable {
+  box-shadow: inset 0 0 0 1px rgba(0, 123, 255, 0.35);
+}
+
+.hand .tile-previewed {
+  box-shadow:
+    inset 0 0 0 2px rgba(245, 158, 11, 0.55),
+    0 0 0 1px rgba(245, 158, 11, 0.22);
+}
+
+.hand .tile-awaiting-play-confirm {
+  box-shadow:
+    inset 0 0 0 2px rgba(16, 185, 129, 0.55),
+    0 0 0 1px rgba(16, 185, 129, 0.22);
+}
+
+.hand .tile-awaiting-play-confirm::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--tile-confirm-overlay, rgba(15, 23, 42, 0.62));
+  pointer-events: none;
+}
+
+.hand .tile-chip-id {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hand .tile-chip-play-prompt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: calc(100% - 0.4rem);
+  padding: 0.1rem 0.24rem;
+  border-radius: 999px;
+  background: var(--tile-confirm-pill-bg, rgba(15, 23, 42, 0.84));
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tile-confirm-text, #f8fafc);
+  font-size: 0.46rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-sizing: border-box;
+  pointer-events: none;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.hand .tile-muted {
+  color: var(--text-subtle);
+  opacity: 1;
+}
+
+.decision-workspace {
+  border: 1px solid var(--panel-border);
+  border-radius: 0.55rem;
+  padding: 0.7rem;
+  background: var(--card-background-color);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.decision-workspace h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.25;
+}
+
+.action-content,
+.portfolio-box,
+.tiles-box {
+  border: 1px solid var(--panel-border);
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.6rem;
+  background: var(--surface-soft);
+}
+
+.action-content p,
+.portfolio-box p,
+.tiles-box p {
+  margin: 0 0 0.45rem;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.action-heading {
+  margin-bottom: 0.35rem;
+  font-size: 0.84rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.portfolio-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.portfolio-line-stocks {
+  align-items: flex-start;
+}
+
+.portfolio-line > span {
+  color: var(--text-subtle);
+}
+
+.portfolio-line strong {
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.portfolio-line-stocks .chain-badge-list {
+  justify-content: flex-end;
+}
+
+.action-choice-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.action-choice-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.3rem 0.4rem;
+  width: auto;
+  min-width: 0;
+  border-color: var(--panel-border);
+  background: transparent;
+}
+
+.action-choice-btn:hover {
+  border-color: var(--primary);
+}
+
+.action-buy {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.buy-summary {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.buy-queue {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.buy-queue-list {
+  gap: 0.5rem;
+}
+
+.buy-queue-chip {
+  padding-inline: 0.45rem;
+}
+
+.buy-queue-chip span[aria-hidden='true'] {
+  color: var(--pico-color);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.buy-confirm-grid {
+  margin-top: 0.15rem;
+  grid-template-columns: 1fr;
+}
+
+.tiles-box .hand .tile-chip {
+  inline-size: var(--hand-tile-size);
+  min-inline-size: var(--hand-tile-size);
+  block-size: var(--hand-tile-size);
+  min-block-size: var(--hand-tile-size);
+}
+
+.tiles-box .muted.small {
+  font-size: 0.76rem;
+}
+
+@keyframes tile-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

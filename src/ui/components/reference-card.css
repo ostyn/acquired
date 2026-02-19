@@ -1,0 +1,54 @@
+/*
+ * Responsibility: Styles quick-reference rule and pricing content.
+ * Optimized for compact modal display with emphasis on key lookup data.
+ */
+
+.reference-chain-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.reference-card {
+  background: var(--surface-soft);
+  border: 1px solid var(--panel-border);
+  border-radius: 0.45rem;
+  padding: 0.75rem;
+}
+
+.reference-card p {
+  margin-bottom: 0.45rem;
+}
+
+.reference-card p:last-of-type {
+  margin-bottom: 0.8rem;
+}
+
+.reference-card h4 {
+  margin-top: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.reference-table {
+  font-size: 0.76rem;
+  width: max(100%, 640px);
+  margin-bottom: 0;
+}
+
+.reference-table th,
+.reference-table td {
+  white-space: normal;
+  padding: 0.3rem 0.45rem;
+  vertical-align: top;
+}
+
+@media (max-width: 768px) {
+  .reference-table {
+    width: max(100%, 560px);
+  }
+}

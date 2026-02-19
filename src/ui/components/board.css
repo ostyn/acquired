@@ -1,0 +1,186 @@
+/*
+ * Responsibility: Styles the Acquire board grid and tile states.
+ * Includes sizing, occupancy visuals, and chain-color treatments.
+ */
+
+.board-wrap {
+  overflow-x: auto;
+  padding: 0.3rem 0.3rem 0.45rem;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(2.25rem, 1fr));
+  gap: 0.24rem;
+  min-width: 30rem;
+  padding: 0.12rem;
+}
+
+.board-tile {
+  appearance: none;
+  margin: 0;
+  width: 100%;
+  position: relative;
+  border: 1px solid var(--board-border);
+  border-radius: 0.34rem;
+  padding: 0.2rem 0.15rem;
+  min-height: 2.45rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.69rem;
+  line-height: 1;
+  background: var(--board-empty-bg);
+  color: var(--board-empty-fg);
+  font: inherit;
+  text-align: center;
+  cursor: default;
+}
+
+.board-tile.playable-target {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.board-tile.playable-target::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: transparent;
+  pointer-events: none;
+}
+
+.board-tile.play-target-confirm {
+  outline: 3px solid #10b981;
+  outline-offset: 2px;
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.3);
+}
+
+.board-tile.play-target-confirm::after {
+  background: var(--tile-confirm-overlay, rgba(15, 23, 42, 0.62));
+}
+
+.board-tile.board-interactive {
+  cursor: pointer;
+}
+
+.board-tile.board-interactive:hover {
+  transform: translateY(-1px);
+}
+
+.board-tile.board-interactive:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.board-tile:disabled {
+  opacity: 1;
+}
+
+.board-tile.hand-highlighted {
+  z-index: 1;
+  outline: 3px solid #f59e0b;
+  outline-offset: 2px;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.28);
+}
+
+.board-tile.hand-highlighted.play-target-confirm {
+  outline: 3px solid #10b981;
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.3);
+}
+
+.board-tile.unincorporated {
+  background: var(--board-uninc-bg);
+  color: var(--board-uninc-fg);
+  border-color: color-mix(in oklab, var(--board-uninc-fg) 40%, var(--board-border));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--board-uninc-fg) 18%, transparent);
+  font-weight: 500;
+  justify-content: center;
+}
+
+.board-tile.chain {
+  background: var(--tile-chain-color);
+  color: var(--tile-chain-ink, #fff);
+  font-weight: 500;
+}
+
+.tile-id {
+  position: relative;
+  z-index: 1;
+  font-size: 0.62rem;
+  color: var(--text-subtle);
+}
+
+.board-tile.empty {
+  justify-content: center;
+}
+
+.board-tile.empty .tile-id {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--board-empty-fg);
+}
+
+.board-tile.chain .tile-id {
+  color: var(--tile-chain-ink, #fff);
+  opacity: 0.88;
+}
+
+.board-tile.unincorporated .tile-id {
+  color: var(--board-uninc-fg);
+  opacity: 1;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tile-marker {
+  position: relative;
+  z-index: 1;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.board-tile.chain .tile-marker {
+  color: var(--tile-chain-ink, #fff);
+}
+
+.board-play-prompt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: calc(100% - 0.4rem);
+  padding: 0.1rem 0.24rem;
+  border-radius: 999px;
+  background: var(--tile-confirm-pill-bg, rgba(15, 23, 42, 0.84));
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tile-confirm-text, #f8fafc);
+  font-size: 0.46rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-sizing: border-box;
+  pointer-events: none;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 768px) {
+  .board {
+    grid-template-columns: repeat(12, minmax(1.95rem, 1fr));
+    min-width: 23.5rem;
+    gap: 0.14rem;
+  }
+
+  .board-tile {
+    padding: 0.14rem 0.1rem;
+    font-size: 0.61rem;
+    min-height: 2rem;
+  }
+}

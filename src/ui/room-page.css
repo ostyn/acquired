@@ -1,0 +1,165 @@
+/*
+ * Responsibility: Styles overall room page composition and responsive shell layout.
+ * Coordinates lobby/game structure, board-first game staging, and contextual side panels.
+ */
+
+:host {
+  display: block;
+  padding-top: 0.35rem;
+  --context-panel-width: clamp(18rem, 27vw, 22rem);
+}
+
+.room-shell {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.page-toolbar {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 900;
+  pointer-events: none;
+}
+
+.theme-toggle-btn {
+  pointer-events: auto;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  border-radius: 999px;
+  padding: 0;
+  border-color: var(--theme-toggle-border);
+  background: var(--theme-toggle-bg);
+  box-shadow: var(--theme-toggle-shadow);
+  color: var(--pico-color);
+  opacity: 0.94;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.theme-toggle-btn:hover {
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+.theme-toggle-btn:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.theme-toggle-icon {
+  display: block;
+  width: 1.08rem;
+  height: 1.08rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.room-shell-lobby,
+.room-shell-game {
+  grid-template-columns: 1fr;
+}
+
+.room-main {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.game-stage-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) var(--context-panel-width);
+  align-items: start;
+}
+
+.board-stage {
+  border: 1px solid var(--panel-border);
+  border-radius: 0.55rem;
+  padding: 0.9rem;
+  background: var(--card-background-color);
+  display: grid;
+  gap: 0.8rem;
+}
+
+.board-stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.board-stage-head h3 {
+  margin: 0;
+}
+
+.board-stage-head p {
+  margin: 0;
+}
+
+.board-ticker {
+  border-top: 1px dashed var(--panel-border);
+  padding-top: 0.6rem;
+}
+
+.board-ticker-title {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.board-ticker-list {
+  margin: 0.45rem 0 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.board-ticker-list li {
+  margin: 0;
+}
+
+.game-context-shell {
+  display: grid;
+  gap: 0.65rem;
+  position: sticky;
+  top: 0.75rem;
+  align-content: start;
+  min-width: 0;
+}
+
+.game-context-panel {
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .game-stage-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-context-shell {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .board-stage {
+    padding: 0.75rem;
+  }
+
+  .board-stage-head {
+    display: grid;
+    gap: 0.2rem;
+  }
+}

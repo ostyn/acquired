@@ -1,0 +1,64 @@
+/*
+ * Responsibility: Styles chain market cards and chain-summary panels.
+ * Handles responsive card layout and chain status emphasis.
+ */
+
+.chain-market-panel {
+  border: 1px solid var(--panel-border);
+  border-radius: 0.55rem;
+  padding: 0.8rem;
+}
+
+.chain-market-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.chain-market-row {
+  border: 1px solid var(--panel-border);
+  border-left-width: 0.5rem;
+  border-radius: 0.42rem;
+  padding: 0.52rem 0.56rem;
+  background: var(--surface-soft);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.chain-market-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.chain-market-tag {
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.chain-market-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.65rem;
+  font-size: 0.81rem;
+}
+
+.chain-market-inactive {
+  margin-top: 0.75rem;
+}
+
+.chain-market-inactive summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 0.45rem;
+}
+
+@media (max-width: 768px) {
+  .chain-market-meta {
+    font-size: 0.78rem;
+  }
+}
