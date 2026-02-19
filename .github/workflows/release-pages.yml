@@ -39,6 +39,9 @@ jobs:
           BASE_PATH: /${{ github.event.repository.name }}/
         run: yarn build
 
+      - name: Add SPA 404 fallback
+        run: cp dist/index.html dist/404.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
