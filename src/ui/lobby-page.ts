@@ -12,6 +12,7 @@ import componentStyles from './lobby-page.css?inline';
 import typographyStyles from './typography.css?inline';
 import { appStore } from '../state/app-store';
 import { getActiveThemeMode, toggleThemeMode, type ThemeMode } from './theme';
+import { roomPath } from './routes';
 
 @customElement('lobby-page')
 export class LobbyPage extends LitElement {
@@ -64,7 +65,7 @@ export class LobbyPage extends LitElement {
       signalingUrl: this.signalingUrl,
     });
     if (ok) {
-      Router.go(`/room/${appStore.roomId}`);
+      Router.go(roomPath(appStore.roomId));
     }
   }
 
@@ -82,7 +83,7 @@ export class LobbyPage extends LitElement {
     });
 
     if (ok) {
-      Router.go(`/room/${this.roomId.trim().toUpperCase()}`);
+      Router.go(roomPath(this.roomId.trim().toUpperCase()));
     }
   }
 
@@ -92,7 +93,7 @@ export class LobbyPage extends LitElement {
       signalingUrl: this.signalingUrl,
     });
     if (ok) {
-      Router.go(`/room/${appStore.roomId}`);
+      Router.go(roomPath(appStore.roomId));
     }
   }
 

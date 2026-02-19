@@ -5,6 +5,7 @@
 
 import { html } from 'lit';
 import { MIN_PLAYER_COUNT } from '../../game/constants';
+import { roomPath } from '../routes';
 
 type LobbyStartControlState = {
   showButton: boolean;
@@ -35,7 +36,7 @@ function copyRoomUrl(roomId: string) {
     return;
   }
 
-  const roomUrl = `${window.location.origin}/room/${encodeURIComponent(roomId)}`;
+  const roomUrl = `${window.location.origin}${roomPath(roomId)}`;
   const clipboard = globalThis?.navigator?.clipboard;
   if (clipboard?.writeText) {
     void clipboard.writeText(roomUrl);

@@ -33,6 +33,7 @@ import { renderPlayersPanel } from './components/players-log';
 import { renderReferenceCard } from './components/reference-card';
 import { renderRoomHub } from './components/room-hub';
 import { getActiveThemeMode, toggleThemeMode, type ThemeMode } from './theme';
+import { appPath, extractRoomIdFromPath } from './routes';
 
 @customElement('room-page')
 export class RoomPage extends LitElement {
@@ -168,20 +169,14 @@ export class RoomPage extends LitElement {
 
   private leaveRoom() {
     appStore.leaveRoom();
-    Router.go('/');
+    Router.go(appPath());
   }
 
   private getRouteRoomId(): string {
     if (typeof window === 'undefined') {
       return '';
     }
-
-    const segments = window.location.pathname.split('/').filter(Boolean);
-    if (segments.length < 2 || segments[0].toLowerCase() !== 'room') {
-      return '';
-    }
-
-    return decodeURIComponent(segments[1]).toUpperCase();
+    return extractRoomIdFromPath(window.location.pathname);
   }
 
   private async autoJoinRouteRoom(force = false) {
@@ -588,7 +583,7 @@ export class RoomPage extends LitElement {
                 </button>
               `
             : html``}
-          <button @click=${() => Router.go('/')}>Go To Lobby</button>
+          <button @click=${() => Router.go(appPath())}>Go To Lobby</button>
         </article>
       `;
     }
