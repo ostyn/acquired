@@ -26,6 +26,7 @@ export type PlayerState = {
 export type LobbySettings = {
   allowDeadTilePlacementAsUnincorporated: boolean;
   excelStyleCoordinates: boolean;
+  showPlayerCashOnTurnRail: boolean;
   maxPlayers: number;
   startingCash: number;
 };

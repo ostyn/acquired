@@ -7,13 +7,39 @@
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.7rem;
 }
 
 .lobby-card-header h3 {
   margin: 0;
+}
+
+.lobby-card-title-group {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.lobby-player-count {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--text-subtle);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.lobby-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.lobby-add-bot-btn {
+  margin: 0;
+  min-height: 2rem;
+  padding: 0.32rem 0.62rem;
+  font-size: 0.82rem;
 }
 
 .lobby-layout {
@@ -27,25 +53,50 @@
 .lobby-roster-panel {
   margin: 0;
   border: 1px solid var(--panel-border);
-  border-radius: 0.45rem;
-  padding: 0.75rem;
+  border-radius: 0.55rem;
+  padding: 0.85rem;
   background: var(--card-background-color);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .lobby-settings-panel {
   margin: 0;
   border: 1px solid var(--panel-border);
-  border-radius: 0.45rem;
-  padding: 0.75rem;
+  border-radius: 0.55rem;
+  padding: 0.85rem;
   background: var(--card-background-color);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.lobby-roster-table-wrap {
+  border: 1px solid var(--panel-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--surface-soft);
+}
+
+.lobby-roster-table {
+  margin: 0;
+}
+
+.lobby-roster-table thead th {
+  background: color-mix(in srgb, var(--surface-soft) 82%, var(--card-background-color) 18%);
+}
+
+.lobby-roster-table tbody td {
+  vertical-align: middle;
+}
+
+.lobby-roster-table connection-status {
+  --connection-status-font-size: 0.71rem;
 }
 
 .lobby-settings-panel h4 {
-  margin-bottom: 0.55rem;
+  margin: 0 0 0.65rem;
 }
 
 .lobby-settings-panel p {
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.48rem;
 }
 
 .lobby-rules-note {
@@ -81,10 +132,11 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   justify-content: flex-end;
+  align-items: center;
 }
 
-.add-bot-button {
-  margin-top: 0.4rem;
+.lobby-remove-bot-btn {
+  border-color: color-mix(in srgb, #ef4444 42%, var(--panel-border));
 }
 
 @media (max-width: 960px) {

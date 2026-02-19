@@ -1,4 +1,4 @@
-# Acquire P2P (Lit + Vaadin Router + MobX)
+# Acquired
 
 A browser implementation of **Acquire** with a peer-to-peer architecture:
 

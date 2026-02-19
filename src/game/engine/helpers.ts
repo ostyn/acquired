@@ -27,6 +27,7 @@ export function defaultLobbySettings(): LobbySettings {
   return {
     allowDeadTilePlacementAsUnincorporated: false,
     excelStyleCoordinates: false,
+    showPlayerCashOnTurnRail: false,
     maxPlayers: MAX_PLAYER_COUNT,
     startingCash: STARTING_CASH,
   };
@@ -66,6 +67,7 @@ export function ensureLobbySettings(state: GameState): LobbySettings {
   const next = {
     allowDeadTilePlacementAsUnincorporated: Boolean(current.allowDeadTilePlacementAsUnincorporated),
     excelStyleCoordinates: Boolean(current.excelStyleCoordinates),
+    showPlayerCashOnTurnRail: Boolean(current.showPlayerCashOnTurnRail),
     maxPlayers: normalizedMaxPlayers ?? defaults.maxPlayers,
     startingCash: normalizedStartingCash ?? defaults.startingCash,
   };
@@ -74,6 +76,7 @@ export function ensureLobbySettings(state: GameState): LobbySettings {
     !state.settings
     || state.settings.allowDeadTilePlacementAsUnincorporated !== next.allowDeadTilePlacementAsUnincorporated
     || state.settings.excelStyleCoordinates !== next.excelStyleCoordinates
+    || state.settings.showPlayerCashOnTurnRail !== next.showPlayerCashOnTurnRail
     || state.settings.maxPlayers !== next.maxPlayers
     || state.settings.startingCash !== next.startingCash
   ) {

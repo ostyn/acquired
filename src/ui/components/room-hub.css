@@ -19,6 +19,15 @@
   margin-bottom: 0.45rem;
 }
 
+.room-app-title {
+  margin: 0 0 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
 .room-code {
   display: inline-flex;
   align-items: center;

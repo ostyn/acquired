@@ -17,19 +17,16 @@ import chainMarketStyles from './components/chain-market.css?inline';
 import gameHudStyles from './components/game-hud.css?inline';
 import lobbyPanelStyles from './components/lobby-panel.css?inline';
 import modalStyles from './components/modal.css?inline';
-import playersLogStyles from './components/players-log.css?inline';
 import referenceCardStyles from './components/reference-card.css?inline';
 import roomHubStyles from './components/room-hub.css?inline';
 import { PHASES } from '../game/constants';
 import { appStore } from '../state/app-store';
 import { renderDecisionWorkspace } from './components/action-workspace';
 import { renderBoard } from './components/board';
-import { renderChainNamesInText } from './components/chain-display';
 import { renderChainPanel } from './components/chain-market';
 import { renderGameHud } from './components/game-hud';
 import { renderLobbyPanel } from './components/lobby-panel';
 import { renderModal } from './components/modal';
-import { renderPlayersPanel } from './components/players-log';
 import { renderReferenceCard } from './components/reference-card';
 import { renderRoomHub } from './components/room-hub';
 import { getActiveThemeMode, toggleThemeMode, type ThemeMode } from './theme';
@@ -48,7 +45,6 @@ export class RoomPage extends LitElement {
     ${unsafeCSS(gameHudStyles)}
     ${unsafeCSS(lobbyPanelStyles)}
     ${unsafeCSS(modalStyles)}
-    ${unsafeCSS(playersLogStyles)}
     ${unsafeCSS(referenceCardStyles)}
     ${unsafeCSS(roomHubStyles)}
 
@@ -81,9 +77,6 @@ export class RoomPage extends LitElement {
   private referenceModalOpen = false;
 
   @state()
-  private playersModalOpen = false;
-
-  @state()
   private autoJoinAttemptedRoomId = '';
 
   @state()
@@ -103,6 +96,9 @@ export class RoomPage extends LitElement {
 
   @state()
   private themeMode: ThemeMode = getActiveThemeMode();
+
+  @state()
+  private roomHubPanelOpen = false;
 
   private disposeReaction: (() => void) | null = null;
 
@@ -127,6 +123,10 @@ export class RoomPage extends LitElement {
 
   protected updated(): void {
     const state = appStore.viewState;
+    if (state?.phase === PHASES.LOBBY && this.roomHubPanelOpen) {
+      this.roomHubPanelOpen = false;
+    }
+
     const localPlayer = appStore.localPlayer;
     if (!state || !localPlayer || state.phase === PHASES.LOBBY || state.phase === PHASES.GAME_OVER) {
       this.clearTileSelection();
@@ -235,16 +235,8 @@ export class RoomPage extends LitElement {
     this.referenceModalOpen = true;
   }
 
-  private openPlayersModal() {
-    this.playersModalOpen = true;
-  }
-
   private closeReferenceModal() {
     this.referenceModalOpen = false;
-  }
-
-  private closePlayersModal() {
-    this.playersModalOpen = false;
   }
 
   private startLobbyNameEdit(playerId: string, currentName: string) {
@@ -354,6 +346,14 @@ export class RoomPage extends LitElement {
     this.syncThemeAttribute();
   }
 
+  private toggleRoomHubPanel() {
+    this.roomHubPanelOpen = !this.roomHubPanelOpen;
+  }
+
+  private closeRoomHubPanel() {
+    this.roomHubPanelOpen = false;
+  }
+
   private syncThemeAttribute() {
     this.setAttribute('data-theme', this.themeMode);
   }
@@ -378,6 +378,27 @@ export class RoomPage extends LitElement {
     return html`
       <svg class="theme-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M21 12.79A9 9 0 1 1 11.21 3a7.2 7.2 0 0 0 9.79 9.79z"></path>
+      </svg>
+    `;
+  }
+
+  private renderRoomPanelToggleIcon() {
+    return html`
+      <svg class="theme-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect>
+        <path d="M7.5 9h9"></path>
+        <path d="M7.5 12.5h9"></path>
+        <path d="M7.5 16h6"></path>
+      </svg>
+    `;
+  }
+
+  private renderReferenceToggleIcon() {
+    return html`
+      <svg class="theme-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 4.5h10a2 2 0 0 1 2 2v13l-4-2-4 2-4-2-4 2v-13a2 2 0 0 1 2-2z"></path>
+        <path d="M8.5 9.25h7"></path>
+        <path d="M8.5 12h7"></path>
       </svg>
     `;
   }
@@ -454,13 +475,11 @@ export class RoomPage extends LitElement {
       `;
     }
 
-    const recent = [...state.log].slice(-4).reverse();
     return html`
       ${renderGameHud({
         state,
         buyQueue: this.buyQueue,
-        onOpenPlayers: () => this.openPlayersModal(),
-        onOpenReference: () => this.openReferenceModal(),
+        localPlayerId: appStore.localPlayerId,
       })}
 
       <section class="game-stage-layout">
@@ -475,16 +494,6 @@ export class RoomPage extends LitElement {
             excelStyleCoordinates: Boolean(state.settings?.excelStyleCoordinates),
             onSelectTile: (tileId) => this.handleHandTileClick(tileId),
           })}
-          <div class="board-ticker" aria-live="polite">
-            <p class="board-ticker-title">Recent Actions</p>
-            ${recent.length
-              ? html`
-                  <ul class="board-ticker-list">
-                    ${recent.map((entry) => html`<li>${renderChainNamesInText(entry, state.chains)}</li>`)}
-                  </ul>
-                `
-              : html`<p class="muted small">No actions logged yet.</p>`}
-          </div>
         </article>
 
         <aside class="game-context-shell">
@@ -517,7 +526,7 @@ export class RoomPage extends LitElement {
     `;
   }
 
-  private renderModals(state, orderedPlayers, inLobby) {
+  private renderModals(inLobby) {
     if (inLobby) {
       return html``;
     }
@@ -526,14 +535,41 @@ export class RoomPage extends LitElement {
       ${this.referenceModalOpen
         ? renderModal('Quick Reference', renderReferenceCard(), () => this.closeReferenceModal(), 'modal-large')
         : html``}
-      ${this.playersModalOpen
-        ? renderModal(
-            'Players',
-            renderPlayersPanel(state, orderedPlayers, appStore.localPlayerId),
-            () => this.closePlayersModal(),
-            'modal-medium',
-          )
-        : html``}
+    `;
+  }
+
+  private renderRoomHubCard(state, inLobby, lobbyMaxPlayers) {
+    return renderRoomHub({
+      state,
+      isHost: appStore.isHost,
+      inLobby,
+      lobbyPlayerCount: state.players.length,
+      lobbyMaxPlayers,
+      connectionStatus: appStore.connectionStatus,
+      statusMessage: appStore.statusMessage,
+      errorMessage: appStore.errorMessage,
+      onStartGame: () => appStore.startGame(),
+      onLeave: () => this.leaveRoom(),
+    });
+  }
+
+  private renderRoomHubPanel(state, inLobby, lobbyMaxPlayers) {
+    return html`
+      <div
+        class="room-hub-panel-backdrop ${this.roomHubPanelOpen ? 'open' : ''}"
+        aria-hidden=${String(!this.roomHubPanelOpen)}
+        @click=${() => this.closeRoomHubPanel()}
+      ></div>
+      <aside
+        id="room-hub-panel"
+        class="room-hub-panel-shell ${this.roomHubPanelOpen ? 'open' : ''}"
+        role="dialog"
+        aria-modal="false"
+        aria-label="Room details and actions"
+        aria-hidden=${String(!this.roomHubPanelOpen)}
+      >
+        ${this.renderRoomHubCard(state, inLobby, lobbyMaxPlayers)}
+      </aside>
     `;
   }
 
@@ -546,16 +582,18 @@ export class RoomPage extends LitElement {
       const waitingForHostState = appStore.isGuest && appStore.connectionStatus !== 'idle' && !appStore.errorMessage;
       return html`
         <div class="page-toolbar">
-          <button
-            class="secondary outline theme-toggle-btn"
-            type="button"
-            @click=${() => this.toggleTheme()}
-            aria-label=${toggleLabel}
-            aria-pressed=${String(this.themeMode === 'dark')}
-            title=${toggleLabel}
-          >
-            ${this.renderThemeToggleIcon()}
-          </button>
+          <div class="page-toolbar-controls">
+            <button
+              class="secondary outline theme-toggle-btn"
+              type="button"
+              @click=${() => this.toggleTheme()}
+              aria-label=${toggleLabel}
+              aria-pressed=${String(this.themeMode === 'dark')}
+              title=${toggleLabel}
+            >
+              ${this.renderThemeToggleIcon()}
+            </button>
+          </div>
         </div>
 
         <article>
@@ -587,43 +625,68 @@ export class RoomPage extends LitElement {
       `;
     }
 
-    const orderedPlayers = state.playerOrder.length
-      ? state.playerOrder
-          .map((id) => state.players.find((player) => player.id === id))
-          .filter(Boolean)
-      : state.players;
-
     const inLobby = state.phase === PHASES.LOBBY;
     const lobbyMaxPlayers = Number.isFinite(Number(state.settings?.maxPlayers))
       ? Number(state.settings.maxPlayers)
       : 6;
+    const roomPanelLabel = this.roomHubPanelOpen ? 'Hide room panel' : 'Show room panel';
+    const showReferenceToggle = !inLobby && state.phase !== PHASES.GAME_OVER;
+    const showRoomPanelToggle = !inLobby;
+    const referenceToggleLabel = this.referenceModalOpen ? 'Hide quick reference' : 'Show quick reference';
 
     return html`
       <div class="page-toolbar">
-        <button
-          class="secondary outline theme-toggle-btn"
-          type="button"
-          @click=${() => this.toggleTheme()}
-          aria-label=${toggleLabel}
-          aria-pressed=${String(this.themeMode === 'dark')}
-          title=${toggleLabel}
-        >
-          ${this.renderThemeToggleIcon()}
-        </button>
+        <div class="page-toolbar-controls">
+          ${showReferenceToggle
+            ? html`
+                <button
+                  class="secondary outline theme-toggle-btn"
+                  type="button"
+                  @click=${() => {
+                    if (this.referenceModalOpen) {
+                      this.closeReferenceModal();
+                    } else {
+                      this.openReferenceModal();
+                    }
+                  }}
+                  aria-label=${referenceToggleLabel}
+                  aria-pressed=${String(this.referenceModalOpen)}
+                  title=${referenceToggleLabel}
+                >
+                  ${this.renderReferenceToggleIcon()}
+                </button>
+              `
+            : html``}
+          ${showRoomPanelToggle
+            ? html`
+                <button
+                  class="secondary outline theme-toggle-btn"
+                  type="button"
+                  @click=${() => this.toggleRoomHubPanel()}
+                  aria-label=${roomPanelLabel}
+                  aria-controls="room-hub-panel"
+                  aria-expanded=${String(this.roomHubPanelOpen)}
+                  title=${roomPanelLabel}
+                >
+                  ${this.renderRoomPanelToggleIcon()}
+                </button>
+              `
+            : html``}
+          <button
+            class="secondary outline theme-toggle-btn"
+            type="button"
+            @click=${() => this.toggleTheme()}
+            aria-label=${toggleLabel}
+            aria-pressed=${String(this.themeMode === 'dark')}
+            title=${toggleLabel}
+          >
+            ${this.renderThemeToggleIcon()}
+          </button>
+        </div>
       </div>
 
-      ${renderRoomHub({
-        state,
-        isHost: appStore.isHost,
-        inLobby,
-        lobbyPlayerCount: state.players.length,
-        lobbyMaxPlayers,
-        connectionStatus: appStore.connectionStatus,
-        statusMessage: appStore.statusMessage,
-        errorMessage: appStore.errorMessage,
-        onStartGame: () => appStore.startGame(),
-        onLeave: () => this.leaveRoom(),
-      })}
+      ${inLobby ? this.renderRoomHubCard(state, inLobby, lobbyMaxPlayers) : html``}
+      ${!inLobby ? this.renderRoomHubPanel(state, inLobby, lobbyMaxPlayers) : html``}
 
       <section class=${inLobby ? 'room-shell room-shell-lobby' : 'room-shell room-shell-game'}>
         <div class="room-main">
@@ -646,7 +709,7 @@ export class RoomPage extends LitElement {
         </div>
       </section>
 
-      ${this.renderModals(state, orderedPlayers, inLobby)}
+      ${this.renderModals(inLobby)}
     `;
   }
 }

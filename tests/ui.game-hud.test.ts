@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getTurnRailChains,
+  getTurnRailLogEntries,
   getTurnRailPlayers,
 } from '../src/ui/components/game-hud';
 
@@ -39,5 +40,49 @@ describe('game hud helpers', () => {
         ],
       }).map((chain) => chain.id),
     ).toEqual(['american', 'luxor', 'festival', 'tower']);
+  });
+
+  it('shows actions since the local player last completed buy/pass turn marker', () => {
+    expect(
+      getTurnRailLogEntries(
+        {
+          players: [
+            { id: 'p1', name: 'Alex' },
+            { id: 'p2', name: 'Blake' },
+          ],
+          log: [
+            'Lobby created.',
+            'Game started.',
+            'Alex buys Tower, Tower.',
+            'Blake places C3 as unincorporated.',
+            'Blake passes stock buying.',
+            'Alex must found a new chain.',
+          ],
+        },
+        'p1',
+      ),
+    ).toEqual([
+      'Alex must found a new chain.',
+      'Blake passes stock buying.',
+      'Blake places C3 as unincorporated.',
+    ]);
+  });
+
+  it('falls back to capped recent log when local player has no turn marker yet', () => {
+    expect(
+      getTurnRailLogEntries(
+        {
+          players: [{ id: 'p1', name: 'Alex' }],
+          log: [
+            'Lobby created.',
+            'Game started.',
+            'Alex joined the lobby.',
+            'Host updated lobby settings.',
+          ],
+        },
+        'p1',
+        2,
+      ),
+    ).toEqual(['Host updated lobby settings.', 'Alex joined the lobby.']);
   });
 });

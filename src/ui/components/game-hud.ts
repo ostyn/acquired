@@ -1,11 +1,18 @@
 /**
  * Responsibility: Renders the compact top turn rail for in-game flow awareness.
- * It highlights phase, acting player, turn order progression, and utility actions.
+ * It highlights phase, acting player, turn order progression, and chain state.
  */
 
 import { html } from 'lit';
-import { renderChainBadge } from './chain-display';
+import { renderChainBadge, renderChainNamesInText } from './chain-display';
 import { actorForPhase, phaseLabel, turnInstruction } from './turn-utils';
+import './connection-status';
+
+const TURN_RAIL_LOG_LIMIT = 18;
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 export function getTurnRailPlayers(state) {
   if (!state || !Array.isArray(state.players)) {
@@ -36,11 +43,43 @@ export function getTurnRailChains(state) {
   return [...active, ...inactive];
 }
 
+export function getTurnRailLogEntries(state, localPlayerId, limit = TURN_RAIL_LOG_LIMIT) {
+  if (!state || !Array.isArray(state.log) || state.log.length === 0) {
+    return [];
+  }
+
+  const cappedLimit = Math.max(1, Number(limit) || TURN_RAIL_LOG_LIMIT);
+  const entries = state.log;
+  const fallback = entries.slice(-cappedLimit).reverse();
+
+  if (!localPlayerId || !Array.isArray(state.players)) {
+    return fallback;
+  }
+
+  const localPlayer = state.players.find((player) => player.id === localPlayerId);
+  const localName = localPlayer?.name?.trim();
+  if (!localName) {
+    return fallback;
+  }
+
+  // A turn ends on buy/pass. Showing entries after this marker yields a compact
+  // "what happened while you were waiting" timeline.
+  const endTurnPattern = new RegExp(`^${escapeRegex(localName)} (buys .+\\.|passes stock buying\\.)$`);
+  let startIndex = 0;
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    if (endTurnPattern.test(entries[index])) {
+      startIndex = index + 1;
+      break;
+    }
+  }
+
+  return entries.slice(startIndex).slice(-cappedLimit).reverse();
+}
+
 export function renderGameHud({
   state,
   buyQueue = [],
-  onOpenPlayers,
-  onOpenReference,
+  localPlayerId = '',
 }) {
   const legal = state.legalActions;
   const actorId = actorForPhase(state);
@@ -50,6 +89,8 @@ export function renderGameHud({
   const instruction = turnInstruction(legal, actorName);
   const orderedPlayers = getTurnRailPlayers(state);
   const orderedChains = getTurnRailChains(state);
+  const recent = getTurnRailLogEntries(state, localPlayerId);
+  const showPlayerCash = Boolean(state?.settings?.showPlayerCashOnTurnRail);
 
   return html`
     <article class="turn-rail">
@@ -71,13 +112,13 @@ export function renderGameHud({
               `
             : html``}
         </div>
-        <div class="turn-rail-actions">
-          <button class="secondary turn-rail-action" @click=${() => onOpenPlayers()}>
-            Players: ${state.players.length}
-          </button>
-          <button class="secondary turn-rail-action" @click=${() => onOpenReference()}>
-            Reference
-          </button>
+        <div class="turn-rail-log">
+          <p class="turn-rail-log-title">Recent Actions</p>
+          <ul class="turn-rail-log-list">
+            ${recent.length
+              ? recent.map((entry) => html`<li>${renderChainNamesInText(entry, state.chains)}</li>`)
+              : html`<li class="turn-rail-log-empty">No actions logged yet.</li>`}
+          </ul>
         </div>
       </div>
 
@@ -85,6 +126,8 @@ export function renderGameHud({
         ${orderedPlayers.map((player) => {
           const isCurrent = player.id === state.currentPlayerId;
           const isActor = player.id === actorId;
+          const isOnline = Boolean(player.connected);
+          const roleLabel = isActor ? 'Acting' : isCurrent ? 'Current' : 'Waiting';
           const classes = ['turn-chip'];
           if (isCurrent) {
             classes.push('turn-chip-current');
@@ -98,16 +141,16 @@ export function renderGameHud({
 
           return html`
             <div class=${classes.join(' ')} role="listitem">
-              <span class="turn-chip-name">${player.name}</span>
-              <span class="turn-chip-meta">
-                ${!player.connected
-                  ? 'Offline'
-                  : isActor
-                    ? 'Acting'
-                    : isCurrent
-                      ? 'Current'
-                      : 'Waiting'}
+              <span class="turn-chip-status">
+                <connection-status
+                  status=${isOnline ? 'online' : 'offline'}
+                  variant="inline"
+                  hide-text
+                ></connection-status>
               </span>
+              <span class="turn-chip-name">${player.name}</span>
+              <span class="turn-chip-meta">${roleLabel}</span>
+              ${showPlayerCash ? html`<span class="turn-chip-cash">$${player.cash ?? 0}</span>` : html``}
             </div>
           `;
         })}

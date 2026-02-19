@@ -157,6 +157,7 @@ export class LobbyPage extends LitElement {
       </div>
 
       <article class="lobby-mode-panel">
+        <p class="lobby-app-title">Acquire</p>
         <h2>Start Playing</h2>
         <p class="lead">Choose whether you are hosting the room or joining an existing one.</p>
 

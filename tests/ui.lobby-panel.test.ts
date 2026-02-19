@@ -8,6 +8,7 @@ describe('lobby panel helpers', () => {
       maxPlayers: 6,
       deadTilesAsUnincorporated: false,
       excelStyleCoordinates: false,
+      showPlayerCashOnTurnRail: false,
     });
   });
 
@@ -18,12 +19,14 @@ describe('lobby panel helpers', () => {
         maxPlayers: '4',
         allowDeadTilePlacementAsUnincorporated: true,
         excelStyleCoordinates: true,
+        showPlayerCashOnTurnRail: true,
       }),
     ).toEqual({
       startingCash: 12000,
       maxPlayers: 4,
       deadTilesAsUnincorporated: true,
       excelStyleCoordinates: true,
+      showPlayerCashOnTurnRail: true,
     });
   });
 

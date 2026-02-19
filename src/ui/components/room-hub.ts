@@ -6,6 +6,7 @@
 import { html } from 'lit';
 import { MIN_PLAYER_COUNT } from '../../game/constants';
 import { roomPath } from '../routes';
+import './connection-status';
 
 type LobbyStartControlState = {
   showButton: boolean;
@@ -143,6 +144,7 @@ export function renderRoomHub({
   return html`
     <article class="room-hub">
       <div class="room-hub-main">
+        <p class="room-app-title">Acquire</p>
         <h2>
           Room
           <span class="room-code">
@@ -158,7 +160,10 @@ export function renderRoomHub({
           </span>
         </h2>
         <p><strong>Role:</strong> ${isHost ? 'Host' : 'Player'}</p>
-        <p><strong>Status:</strong> <span class="room-status-badge">${statusMeta.icon} ${statusMeta.label}</span></p>
+        <p>
+          <strong>Status:</strong>
+          <connection-status class="room-status-badge" status=${connectionStatus} variant="inline"></connection-status>
+        </p>
         ${statusMeta.detail ? html`<p class="muted small room-status-detail">${statusMeta.detail}</p>` : html``}
         ${inLobby ? html`<p><strong>Players:</strong> ${lobbyPlayerCount} / ${lobbyMaxPlayers}</p>` : html``}
         ${errorMessage ? html`<p style="color:#b00020;"><strong>Error:</strong> ${errorMessage}</p>` : html``}

@@ -182,11 +182,13 @@ describe('acquire engine extra coverage', () => {
       startingCash: 12000,
       maxPlayers: 4,
       allowDeadTilePlacementAsUnincorporated: true,
+      showPlayerCashOnTurnRail: true,
     });
     expect(hostAttempt.ok).toBe(true);
     expect(state.settings.startingCash).toBe(12000);
     expect(state.settings.maxPlayers).toBe(4);
     expect(state.settings.allowDeadTilePlacementAsUnincorporated).toBe(true);
+    expect(state.settings.showPlayerCashOnTurnRail).toBe(true);
   });
 
   it('rejects invalid starting money values', () => {
@@ -299,6 +301,7 @@ describe('acquire engine extra coverage', () => {
       startingCash: 9000,
       maxPlayers: 4,
       allowDeadTilePlacementAsUnincorporated: true,
+      showPlayerCashOnTurnRail: true,
     });
 
     const publicState = toPublicState(state, 'p2');
@@ -306,7 +309,18 @@ describe('acquire engine extra coverage', () => {
       startingCash: 9000,
       maxPlayers: 4,
       allowDeadTilePlacementAsUnincorporated: true,
+      showPlayerCashOnTurnRail: true,
     });
+  });
+
+  it('publishes chronological log history capped to the latest 120 entries', () => {
+    const state = createLobby();
+    state.log = Array.from({ length: 150 }, (_, index) => `Log ${index + 1}`);
+
+    const publicState = toPublicState(state, 'p1');
+    expect(publicState.log).toHaveLength(120);
+    expect(publicState.log[0]).toBe('Log 31');
+    expect(publicState.log[119]).toBe('Log 150');
   });
 
   it('allows eighth-chain tiles to be played as unincorporated when configured', () => {

@@ -279,6 +279,12 @@ function renderActionPanel({
         <p class="buy-summary">
           Select up to 3 shares. Cash after queued buys: <strong>$${remainingCash}</strong>.
         </p>
+        <div class="grid-2 buy-confirm-grid">
+          <button @click=${() => onCommitBuy(false)}>End Turn</button>
+          ${legal.canEndGame
+            ? html`<button class="secondary" @click=${() => onCommitBuy(true)}>Confirm Buy And End Game</button>`
+            : html``}
+        </div>
         ${state.pendingEndGameRequest
           ? html`
               <p class="muted small">
@@ -331,13 +337,6 @@ function renderActionPanel({
                 </div>
               `
             : html`<p class="muted">None</p>`}
-        </div>
-
-        <div class="grid-2 buy-confirm-grid">
-          <button @click=${() => onCommitBuy(false)}>Confirm Buy / Pass</button>
-          ${legal.canEndGame
-            ? html`<button class="secondary" @click=${() => onCommitBuy(true)}>Confirm Buy And End Game</button>`
-            : html``}
         </div>
       </section>
     `;

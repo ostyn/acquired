@@ -11,6 +11,7 @@ import {
   MIN_STARTING_CASH,
   STARTING_CASH_STEP,
 } from '../../game/constants';
+import './connection-status';
 
 export function normalizeLobbySettings(
   settings: {
@@ -18,6 +19,7 @@ export function normalizeLobbySettings(
     maxPlayers?: number | string;
     allowDeadTilePlacementAsUnincorporated?: boolean;
     excelStyleCoordinates?: boolean;
+    showPlayerCashOnTurnRail?: boolean;
   } = {},
 ) {
   return {
@@ -29,6 +31,7 @@ export function normalizeLobbySettings(
       : MAX_PLAYER_COUNT,
     deadTilesAsUnincorporated: Boolean(settings.allowDeadTilePlacementAsUnincorporated),
     excelStyleCoordinates: Boolean(settings.excelStyleCoordinates),
+    showPlayerCashOnTurnRail: Boolean(settings.showPlayerCashOnTurnRail),
   };
 }
 
@@ -67,77 +70,96 @@ export function renderLobbyPanel({
     <section class="lobby-layout">
       <article class="lobby-roster-panel">
         <div class="lobby-card-header">
-          <h3>Players</h3>
+          <div class="lobby-card-title-group">
+            <h3>Players</h3>
+            <p class="lobby-player-count">${state.players.length} ${state.players.length === 1 ? 'player' : 'players'}</p>
+          </div>
+          ${isHost
+            ? html`
+                <div class="lobby-card-actions">
+                  <button class="secondary lobby-add-bot-btn" @click=${() => onAddBot()}>Add Bot</button>
+                </div>
+              `
+            : html``}
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            ${state.players.map((player) => {
-              const canRename = player.id === localPlayerId || (isHost && player.isBot);
-              const isEditing = Boolean(editingPlayerIds?.[player.id]);
-              const draftName = nameDrafts?.[player.id] ?? player.name;
-              return html`
-                <tr>
-                  <td>
-                    ${isEditing
-                      ? html`
-                          <input
-                            class="player-name-input"
-                            .value=${draftName}
-                            maxlength="24"
-                            @input=${(event) => onChangeRenameDraft(player.id, event.target.value)}
-                            @keydown=${(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault();
-                                onSaveRename(player.id, player.name);
-                              }
-                              if (event.key === 'Escape') {
-                                event.preventDefault();
-                                onCancelRename(player.id);
-                              }
-                            }}
-                          />
-                        `
-                      : player.name}
-                  </td>
-                  <td>${player.isBot ? 'Bot' : 'Human'}</td>
-                  <td>${player.connected ? 'Connected' : 'Offline'}</td>
-                  <td>
-                    <div class="player-row-actions">
-                      ${canRename && !isEditing
-                        ? html`<button class="secondary outline" @click=${() => onStartRename(player.id, player.name)}>
-                            Edit
-                          </button>`
-                        : html``}
+        <div class="lobby-roster-table-wrap">
+          <table class="lobby-roster-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${state.players.map((player) => {
+                const canRename = player.id === localPlayerId || (isHost && player.isBot);
+                const isEditing = Boolean(editingPlayerIds?.[player.id]);
+                const isHostBot = Boolean(isHost && player.isBot);
+                const editLabel = isHostBot ? 'Rename' : 'Edit';
+                const draftName = nameDrafts?.[player.id] ?? player.name;
+                return html`
+                  <tr>
+                    <td>
                       ${isEditing
                         ? html`
-                            <button class="secondary" @click=${() => onSaveRename(player.id, player.name)}>Done</button>
-                            <button class="secondary outline" @click=${() => onCancelRename(player.id)}>Cancel</button>
+                            <input
+                              class="player-name-input"
+                              .value=${draftName}
+                              maxlength="24"
+                              @input=${(event) => onChangeRenameDraft(player.id, event.target.value)}
+                              @keydown=${(event) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault();
+                                  onSaveRename(player.id, player.name);
+                                }
+                                if (event.key === 'Escape') {
+                                  event.preventDefault();
+                                  onCancelRename(player.id);
+                                }
+                              }}
+                            />
                           `
-                        : html``}
-                      ${isEditing && isHost && player.isBot
-                        ? html`<button class="secondary" @click=${() => onRemoveBot(player.id)}>Remove</button>`
-                        : html``}
-                    </div>
-                  </td>
-                </tr>
-              `;
-            })}
-          </tbody>
-        </table>
-        <p class="muted small">Use Edit to rename yourself. Host can also rename bots.</p>
-
-        ${isHost
-          ? html`<button class="secondary add-bot-button" @click=${() => onAddBot()}>Add Bot</button>`
-          : html``}
+                        : player.name}
+                    </td>
+                    <td>${player.isBot ? 'Bot' : 'Human'}</td>
+                    <td>
+                      <connection-status
+                        status=${player.connected ? 'connected' : 'disconnected'}
+                        variant="pill"
+                      ></connection-status>
+                    </td>
+                    <td>
+                      <div class="player-row-actions">
+                        ${canRename && !isEditing
+                          ? html`<button class="secondary outline" @click=${() => onStartRename(player.id, player.name)}>
+                              ${editLabel}
+                            </button>`
+                          : html``}
+                        ${isEditing
+                          ? html`
+                              <button class="secondary" @click=${() => onSaveRename(player.id, player.name)}>Save</button>
+                              <button class="secondary outline" @click=${() => onCancelRename(player.id)}>Cancel</button>
+                            `
+                          : html``}
+                        ${isHostBot
+                          ? html`
+                              <button class="secondary outline lobby-remove-bot-btn" @click=${() => onRemoveBot(player.id)}>
+                                Remove
+                              </button>
+                            `
+                          : html``}
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p class="muted small">Use Edit to rename yourself. Host can rename or remove bots.</p>
       </article>
 
       <article class="lobby-settings-panel">
@@ -195,6 +217,17 @@ export function renderLobbyPanel({
                   />
                   Use Excel-style coordinates (A1 across, numbers down)
                 </label>
+                <label class="lobby-toggle-label">
+                  <input
+                    type="checkbox"
+                    .checked=${settings.showPlayerCashOnTurnRail}
+                    @change=${(event) =>
+                      onUpdateSettings({
+                        showPlayerCashOnTurnRail: event.target.checked,
+                      })}
+                  />
+                  Show player cash on turn rail chips
+                </label>
               </div>
               <p class="muted small">
                 When enabled, tiles that would create an eighth chain are still played but do not found a new
@@ -212,6 +245,10 @@ export function renderLobbyPanel({
               <p>
                 <strong>Coordinates:</strong>
                 ${settings.excelStyleCoordinates ? 'Excel style (A1 across)' : 'Classic style'}
+              </p>
+              <p>
+                <strong>Turn Rail Cash:</strong>
+                ${settings.showPlayerCashOnTurnRail ? 'Shown' : 'Hidden'}
               </p>
               ${showTwoPlayerRulesNote ? renderTwoPlayerRulesNote() : html``}
             `}

@@ -23,6 +23,7 @@ export function createLobbyState({ roomId, hostPlayer }: { roomId: string; hostP
   const settings = {
     allowDeadTilePlacementAsUnincorporated: false,
     excelStyleCoordinates: false,
+    showPlayerCashOnTurnRail: false,
     maxPlayers: MAX_PLAYER_COUNT,
     startingCash: 6000,
   };
@@ -111,6 +112,10 @@ export function setLobbySettings(state: GameState, actorId: string, settingsPatc
 
   if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'excelStyleCoordinates')) {
     next.excelStyleCoordinates = Boolean(settingsPatch.excelStyleCoordinates);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'showPlayerCashOnTurnRail')) {
+    next.showPlayerCashOnTurnRail = Boolean(settingsPatch.showPlayerCashOnTurnRail);
   }
 
   if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'maxPlayers')) {

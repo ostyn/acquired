@@ -14,7 +14,7 @@
 
 .turn-rail-top {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 1fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(250px, 1fr);
   gap: 0.8rem;
   align-items: start;
 }
@@ -79,15 +79,44 @@
   animation-delay: 0.3s;
 }
 
-.turn-rail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  justify-content: flex-end;
+.turn-rail-log {
+  border: 1px solid var(--panel-border);
+  border-radius: 0.45rem;
+  background: var(--surface-soft);
+  padding: 0.45rem 0.5rem;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  row-gap: 0.3rem;
+  min-height: 0;
 }
 
-.turn-rail-action {
-  margin-bottom: 0;
+.turn-rail-log-title {
+  margin: 0;
+  font-size: 0.73rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.turn-rail-log-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.22rem;
+  height: 6.4rem;
+  overflow-y: auto;
+  font-size: 0.79rem;
+  align-content: start;
+}
+
+.turn-rail-log-list li {
+  margin: 0;
+}
+
+.turn-rail-log-empty {
+  list-style: none;
+  margin-left: -1rem;
+  color: var(--text-subtle);
 }
 
 .turn-order-track {
@@ -100,10 +129,13 @@
   margin: 0;
   border: 1px solid var(--panel-border);
   border-radius: 0.45rem;
-  padding: 0.45rem 0.55rem;
+  padding: 0.45rem 1.05rem 0.45rem 0.55rem;
   background: var(--surface-soft);
+  color: var(--pico-color);
   display: grid;
-  gap: 0.2rem;
+  gap: 0.24rem;
+  line-height: 1.2;
+  position: relative;
 }
 
 .turn-chip-current {
@@ -117,17 +149,59 @@
 
 .turn-chip-offline {
   border-style: dashed;
-  color: var(--text-subtle);
 }
 
 .turn-chip-name {
+  color: var(--pico-color);
   font-weight: 700;
   font-size: 0.93rem;
+}
+
+.turn-chip-status {
+  position: absolute;
+  top: 0.34rem;
+  right: 0.34rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.turn-chip-status connection-status {
+  --connection-status-dot-size: 0.55rem;
 }
 
 .turn-chip-meta {
   font-size: 0.75rem;
   color: var(--text-subtle);
+}
+
+.turn-chip-cash {
+  font-size: 0.78rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--pico-color);
+}
+
+:host([data-theme='light']) .turn-chip {
+  background: #edf3fb;
+  border-color: #c3cfde;
+  color: #2a3443;
+}
+
+:host([data-theme='light']) .turn-chip-name {
+  color: #2a3443;
+}
+
+:host([data-theme='light']) .turn-chip-meta {
+  color: #4b5b73;
+}
+
+:host([data-theme='light']) .turn-chip-cash {
+  color: #2a3443;
+}
+
+:host([data-theme='light']) .turn-chip-actor {
+  background: #dbeafe;
 }
 
 .turn-chain-track {
@@ -187,25 +261,11 @@
   .turn-rail-top {
     grid-template-columns: 1fr;
   }
-
-  .turn-rail-actions {
-    justify-content: flex-start;
-  }
 }
 
 @media (max-width: 768px) {
   .turn-rail {
     padding: 0.75rem;
-  }
-
-  .turn-rail-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(110px, 1fr));
-    width: 100%;
-  }
-
-  .turn-rail-action {
-    width: 100%;
   }
 
   .turn-order-track {

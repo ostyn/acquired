@@ -67,6 +67,15 @@
   margin-bottom: 1rem;
 }
 
+.lobby-app-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
 .lead {
   color: var(--text-subtle);
 }
