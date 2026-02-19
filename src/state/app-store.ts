@@ -446,6 +446,7 @@ class AppStore {
       this.connectionStatus = "connected";
       this.statusMessage = openMessage;
       this.broadcastState();
+      this.runBotsUntilHumanNeeded();
     });
 
     this.peer.on("connection", (connection) => {

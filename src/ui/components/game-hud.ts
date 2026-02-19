@@ -4,7 +4,6 @@
  */
 
 import { html } from 'lit';
-import { PHASES } from '../../game/constants';
 import { renderChainBadge } from './chain-display';
 import { actorForPhase, phaseLabel, turnInstruction } from './turn-utils';
 
@@ -39,9 +38,7 @@ export function getTurnRailChains(state) {
 
 export function renderGameHud({
   state,
-  localPlayer,
   buyQueue = [],
-  onAddBuy = null,
   onOpenPlayers,
   onOpenReference,
 }) {
@@ -53,12 +50,6 @@ export function renderGameHud({
   const instruction = turnInstruction(legal, actorName);
   const orderedPlayers = getTurnRailPlayers(state);
   const orderedChains = getTurnRailChains(state);
-  const buyPhaseActive = legal?.phase === PHASES.AWAIT_BUY && Boolean(legal?.isTurn);
-  const selectedCost = buyQueue.reduce((sum, chainId) => {
-    const selectedChain = state.chains.find((chain) => chain.id === chainId);
-    return sum + (selectedChain?.price || 0);
-  }, 0);
-  const remainingCash = Math.max(0, (localPlayer?.cash || 0) - selectedCost);
 
   return html`
     <article class="turn-rail">
@@ -127,11 +118,6 @@ export function renderGameHud({
           const classes = ['turn-chain-card'];
           const selectedForChain = buyQueue.filter((id) => id === chain.id).length;
           const displayAvailableShares = Math.max(0, chain.availableShares - selectedForChain);
-          const canAddBuy =
-            buyQueue.length < 3
-            && displayAvailableShares > 0
-            && chain.price > 0
-            && chain.price <= remainingCash;
           if (chain.active) {
             classes.push('turn-chain-card-active');
           } else {
@@ -149,21 +135,6 @@ export function renderGameHud({
                 ${chain.active ? html`<span>Price $${chain.price}</span>` : html``}
                 <span>Shares ${displayAvailableShares}</span>
               </div>
-              ${buyPhaseActive && chain.active
-                ? html`
-                    <button
-                      class="secondary turn-chain-buy-btn"
-                      ?disabled=${!canAddBuy}
-                      @click=${() => {
-                        if (typeof onAddBuy === 'function') {
-                          onAddBuy(chain.id);
-                        }
-                      }}
-                    >
-                      Buy Share
-                    </button>
-                  `
-                : html``}
             </div>
           `;
         })}

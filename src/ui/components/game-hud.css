@@ -183,14 +183,6 @@
   color: var(--pico-color);
 }
 
-.turn-chain-buy-btn {
-  margin: 0.08rem 0 0;
-  width: 100%;
-  padding: 0.25rem 0.4rem;
-  font-size: 0.74rem;
-  line-height: 1.2;
-}
-
 @media (max-width: 1024px) {
   .turn-rail-top {
     grid-template-columns: 1fr;

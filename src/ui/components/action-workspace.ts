@@ -54,6 +54,7 @@ function renderActionPanel({
   mergerSell,
   mergerTradeFrom,
   onSendAction,
+  onAddBuy,
   onRemoveBuy,
   onCommitBuy,
   onSetMergerSell,
@@ -150,6 +151,22 @@ function renderActionPanel({
       onSetMergerSell(normalizedSell);
     }
 
+    const resultingHold = Math.max(0, decision.owned - normalizedTrade - normalizedSell);
+    const gainedSurvivorShares = Math.floor(normalizedTrade / tradeUnit);
+    const applyTradeValue = (nextTradeRaw) => {
+      const nextTrade = normalizeMergerTradeFrom(nextTradeRaw, maxTrade, tradeUnit);
+      onSetMergerTradeFrom(nextTrade);
+
+      const nextSellCap = Math.max(0, decision.owned - nextTrade);
+      const clampedSell = normalizeMergerSell(normalizedSell, nextSellCap);
+      if (clampedSell !== normalizedSell) {
+        onSetMergerSell(clampedSell);
+      }
+    };
+    const applySellValue = (nextSellRaw) => {
+      onSetMergerSell(normalizeMergerSell(nextSellRaw, dynamicMaxSell));
+    };
+
     return html`
       <section class="action-content">
         <p class="action-heading"><strong>Merger Stock Decision</strong></p>
@@ -161,46 +178,89 @@ function renderActionPanel({
           ${renderChainBadge(decision.defunctChainId, state.chains, { compact: true })} sells for
           $${decision.defunctPrice} each.
         </p>
-        <div class="grid-2">
-          <label>
-            Trade shares (${decision.tradeUnit}:1)
-            <input
-              type="number"
-              min="0"
-              step=${String(tradeUnit)}
-              max=${String(maxTrade)}
-              .value=${String(normalizedTrade)}
-              @input=${(event) => {
-                const rawTrade = Number(event.target.value || 0);
-                const nextTrade = normalizeMergerTradeFrom(rawTrade, maxTrade, tradeUnit);
-                onSetMergerTradeFrom(nextTrade);
-
-                const nextSellCap = Math.max(0, decision.owned - nextTrade);
-                const clampedSell = normalizeMergerSell(mergerSell, nextSellCap);
-                if (clampedSell !== mergerSell) {
-                  onSetMergerSell(clampedSell);
-                }
-              }}
-            />
-          </label>
-          <label>
-            Sell shares
-            <input
-              type="number"
-              min="0"
-              step="1"
-              max=${String(dynamicMaxSell)}
-              .value=${String(normalizedSell)}
-              @input=${(event) => {
-                const rawSell = Number(event.target.value || 0);
-                onSetMergerSell(normalizeMergerSell(rawSell, dynamicMaxSell));
-              }}
-            />
-          </label>
+        <div class="merger-decision-grid">
+          <div class="merger-control-card">
+            <p class="action-heading"><strong>Trade Shares</strong></p>
+            <p class="muted small">Trade in blocks of ${tradeUnit} to gain survivor shares.</p>
+            <div class="merger-stepper">
+              <button
+                class="secondary merger-step-btn"
+                ?disabled=${normalizedTrade <= 0}
+                @click=${() => applyTradeValue(normalizedTrade - tradeUnit)}
+                aria-label="Trade fewer shares"
+              >
+                -
+              </button>
+              <strong class="merger-step-value">${normalizedTrade}</strong>
+              <button
+                class="secondary merger-step-btn"
+                ?disabled=${normalizedTrade >= maxTrade}
+                @click=${() => applyTradeValue(normalizedTrade + tradeUnit)}
+                aria-label="Trade more shares"
+              >
+                +
+              </button>
+            </div>
+            <div class="merger-quick-actions">
+              <button
+                class="secondary outline merger-quick-btn"
+                ?disabled=${normalizedTrade === 0}
+                @click=${() => applyTradeValue(0)}
+              >
+                Clear
+              </button>
+              <button
+                class="secondary outline merger-quick-btn"
+                ?disabled=${normalizedTrade === maxTrade}
+                @click=${() => applyTradeValue(maxTrade)}
+              >
+                Max Trade
+              </button>
+            </div>
+          </div>
+          <div class="merger-control-card">
+            <p class="action-heading"><strong>Sell Shares</strong></p>
+            <p class="muted small">Sell defunct shares for cash immediately.</p>
+            <div class="merger-stepper">
+              <button
+                class="secondary merger-step-btn"
+                ?disabled=${normalizedSell <= 0}
+                @click=${() => applySellValue(normalizedSell - 1)}
+                aria-label="Sell fewer shares"
+              >
+                -
+              </button>
+              <strong class="merger-step-value">${normalizedSell}</strong>
+              <button
+                class="secondary merger-step-btn"
+                ?disabled=${normalizedSell >= dynamicMaxSell}
+                @click=${() => applySellValue(normalizedSell + 1)}
+                aria-label="Sell more shares"
+              >
+                +
+              </button>
+            </div>
+            <div class="merger-quick-actions">
+              <button
+                class="secondary outline merger-quick-btn"
+                ?disabled=${normalizedSell === 0}
+                @click=${() => applySellValue(0)}
+              >
+                Clear
+              </button>
+              <button
+                class="secondary outline merger-quick-btn"
+                ?disabled=${normalizedSell === dynamicMaxSell}
+                @click=${() => applySellValue(dynamicMaxSell)}
+              >
+                Sell All
+              </button>
+            </div>
+          </div>
         </div>
         <p class="muted small">
-          Holding after this decision:
-          ${Math.max(0, decision.owned - normalizedTrade - normalizedSell)} share(s).
+          Result: gain ${gainedSurvivorShares} survivor share(s), hold ${resultingHold} defunct share(s), and sell
+          ${normalizedSell} share(s).
         </p>
         <button @click=${() => onSubmitMergerDecision(normalizedSell, normalizedTrade)}>
           Submit Decision
@@ -226,6 +286,34 @@ function renderActionPanel({
               </p>
             `
           : html``}
+        <div class="buy-token-picker">
+          ${state.chains
+            .filter((chain) => chain.active)
+            .map((chain) => {
+              const selectedForChain = buyQueue.filter((chainId) => chainId === chain.id).length;
+              const displayAvailableShares = Math.max(0, chain.availableShares - selectedForChain);
+              const canAdd =
+                buyQueue.length < 3
+                && displayAvailableShares > 0
+                && chain.price > 0
+                && chain.price <= remainingCash;
+
+              return html`
+                <button
+                  class="secondary action-choice-btn buy-chain-token"
+                  ?disabled=${!canAdd}
+                  @click=${() => onAddBuy(chain.id)}
+                  title=${`${chain.name}: ${displayAvailableShares} share(s) available`}
+                >
+                  ${renderChainBadge(chain.id, state.chains, { compact: true })}
+                  ${selectedForChain
+                    ? html`<span class="buy-chain-count">${selectedForChain}</span>`
+                    : html``}
+                </button>
+              `;
+            })}
+        </div>
+        <p class="muted small buy-token-hint">Tap chain tokens to queue shares. Use rail cards for detailed pricing.</p>
 
         <div class="buy-queue">
           <p class="action-heading"><strong>Shares To Buy</strong></p>
@@ -269,6 +357,7 @@ export function renderDecisionWorkspace({
   excelStyleCoordinates = false,
   onSendAction,
   onSelectTile,
+  onAddBuy,
   onRemoveBuy,
   onCommitBuy,
   onSetMergerSell,
@@ -284,6 +373,67 @@ export function renderDecisionWorkspace({
   const sortedTiles = localPlayer
     ? [...localPlayer.tiles].sort((left, right) => tileSortValue(left) - tileSortValue(right))
     : [];
+  const tilesSection = html`
+    <section class="tiles-box">
+      <p class="action-heading">
+        <strong>Your Tiles</strong>
+        ${localPlayer
+          ? html`<span class="muted small">(${playableTiles.size} playable / ${localPlayer.tiles.length} total)</span>`
+          : html``}
+      </p>
+      ${localPlayer
+        ? html`
+            <div class="hand">
+              ${repeat(sortedTiles, (tileId) => tileId, (tileId) => {
+                const playable = playableTiles.has(tileId);
+                const isPreviewed = tilePreviewId === tileId;
+                const showPlayPrompt = canPlaceTileNow && playable && pendingPlaceTileId === tileId;
+                const classes = ['tile-chip'];
+
+                if (playable) {
+                  classes.push('tile-playable');
+                } else {
+                  classes.push('secondary');
+                  if (canPlaceTileNow) {
+                    classes.push('tile-muted');
+                  }
+                }
+
+                if (isPreviewed) {
+                  classes.push('tile-previewed');
+                }
+
+                if (showPlayPrompt) {
+                  classes.push('tile-awaiting-play-confirm');
+                }
+
+                return html`
+                  <button
+                    @click=${() => onSelectTile(tileId)}
+                    class=${classes.join(' ')}
+                  >
+                    <span class="tile-chip-id">${formatTileLabel(tileId, excelStyleCoordinates)}</span>
+                    ${showPlayPrompt ? html`<span class="tile-chip-play-prompt">play?</span>` : html``}
+                  </button>
+                `;
+              })}
+            </div>
+            <p class="muted small">
+              ${canPlaceTileNow
+                ? 'Click a playable hand tile or board target to preview it, then click the same spot again to place it.'
+                : 'Click any hand tile to preview its board location. Placement is enabled during your tile phase.'}
+            </p>
+            ${canPlaceTileNow && legal?.canSkipTile
+              ? html`
+                  <button class="secondary" @click=${() => onSendAction({ type: 'SKIP_TILE' })}>
+                    Skip Tile Placement
+                  </button>
+                `
+              : html``}
+          `
+        : html`<p>No local hand available.</p>`}
+    </section>
+  `;
 
   return html`
     <article class="decision-workspace">
@@ -308,6 +458,8 @@ export function renderDecisionWorkspace({
         </p>
       </section>
 
+      ${tilesSection}
+
       ${renderActionPanel({
         state,
         legal,
@@ -317,6 +469,7 @@ export function renderDecisionWorkspace({
         mergerSell,
         mergerTradeFrom,
         onSendAction,
+        onAddBuy,
         onRemoveBuy,
         onCommitBuy,
         onSetMergerSell,
@@ -335,66 +488,6 @@ export function renderDecisionWorkspace({
             </section>
           `
         : html``}
-
-      <section class="tiles-box">
-        <p class="action-heading">
-          <strong>Your Tiles</strong>
-          ${localPlayer
-            ? html`<span class="muted small">(${playableTiles.size} playable / ${localPlayer.tiles.length} total)</span>`
-            : html``}
-        </p>
-        ${localPlayer
-          ? html`
-              <div class="hand">
-                ${repeat(sortedTiles, (tileId) => tileId, (tileId) => {
-                  const playable = playableTiles.has(tileId);
-                  const isPreviewed = tilePreviewId === tileId;
-                  const showPlayPrompt = canPlaceTileNow && playable && pendingPlaceTileId === tileId;
-                  const classes = ['tile-chip'];
-
-                  if (playable) {
-                    classes.push('tile-playable');
-                  } else {
-                    classes.push('secondary');
-                    if (canPlaceTileNow) {
-                      classes.push('tile-muted');
-                    }
-                  }
-
-                  if (isPreviewed) {
-                    classes.push('tile-previewed');
-                  }
-
-                  if (showPlayPrompt) {
-                    classes.push('tile-awaiting-play-confirm');
-                  }
-
-                  return html`
-                    <button
-                      @click=${() => onSelectTile(tileId)}
-                      class=${classes.join(' ')}
-                    >
-                      <span class="tile-chip-id">${formatTileLabel(tileId, excelStyleCoordinates)}</span>
-                      ${showPlayPrompt ? html`<span class="tile-chip-play-prompt">play?</span>` : html``}
-                    </button>
-                  `;
-                })}
-              </div>
-              <p class="muted small">
-                ${canPlaceTileNow
-                  ? 'Click a playable hand tile or board target to preview it, then click the same spot again to place it.'
-                  : 'Click any hand tile to preview its board location. Placement is enabled during your tile phase.'}
-              </p>
-              ${canPlaceTileNow && legal?.canSkipTile
-                ? html`
-                    <button class="secondary" @click=${() => onSendAction({ type: 'SKIP_TILE' })}>
-                      Skip Tile Placement
-                    </button>
-                  `
-                : html``}
-            `
-          : html`<p>No local hand available.</p>`}
-      </section>
     </article>
   `;
 }

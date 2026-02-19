@@ -458,9 +458,7 @@ export class RoomPage extends LitElement {
     return html`
       ${renderGameHud({
         state,
-        localPlayer: appStore.localPlayer,
         buyQueue: this.buyQueue,
-        onAddBuy: (chainId) => this.addBuy(chainId),
         onOpenPlayers: () => this.openPlayersModal(),
         onOpenReference: () => this.openReferenceModal(),
       })}
@@ -502,6 +500,7 @@ export class RoomPage extends LitElement {
               excelStyleCoordinates: Boolean(state.settings?.excelStyleCoordinates),
               onSendAction: (action) => appStore.sendAction(action),
               onSelectTile: (tileId) => this.handleHandTileClick(tileId),
+              onAddBuy: (chainId) => this.addBuy(chainId),
               onRemoveBuy: (index) => this.removeBuy(index),
               onCommitBuy: (endGame) => this.commitBuy(endGame),
               onSetMergerSell: (value) => {

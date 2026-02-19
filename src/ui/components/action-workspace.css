@@ -196,9 +196,115 @@
   gap: 0.65rem;
 }
 
+.merger-decision-grid {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+}
+
+.merger-control-card {
+  border: 1px solid var(--panel-border);
+  border-radius: 0.45rem;
+  background: var(--card-background-color);
+  padding: 0.5rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.merger-control-card .action-heading {
+  margin: 0;
+}
+
+.merger-control-card .muted.small {
+  margin: 0;
+}
+
+.merger-stepper {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.merger-step-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.38rem;
+  min-height: 2rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.merger-step-btn {
+  margin: 0;
+  padding: 0;
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  font-size: 1rem;
+  line-height: 1;
+  border-color: var(--panel-border);
+}
+
+.merger-quick-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.merger-quick-btn {
+  margin: 0;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
 .buy-summary {
   margin: 0;
   font-size: 0.88rem;
+}
+
+.buy-token-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.buy-chain-token {
+  position: relative;
+  border-color: var(--panel-border);
+  background: var(--card-background-color);
+  padding: 0.18rem 0.28rem;
+  border-radius: 0.45rem;
+  gap: 0.28rem;
+}
+
+.buy-chain-token:disabled {
+  opacity: 0.56;
+}
+
+.buy-chain-token .chain-badge {
+  pointer-events: none;
+}
+
+.buy-chain-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.2rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.66rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.buy-token-hint {
+  margin-top: -0.1rem;
 }
 
 .buy-queue {
