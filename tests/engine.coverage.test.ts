@@ -760,6 +760,33 @@ describe('acquire engine extra coverage', () => {
     expect(action.endGame).toBe(true);
   });
 
+  it('monte carlo bot falls back when structuredClone fails', () => {
+    const state = createLobby(2, ['p2']);
+    startGame(state, () => 0.5);
+
+    const bot = getPlayer(state, 'p2');
+    state.currentPlayerId = bot.id;
+    state.phase = PHASES.AWAIT_BUY;
+    bot.cash = 600;
+
+    state.hotels.tower.active = true;
+    state.hotels.tower.size = 2;
+    state.hotels.tower.availableShares = 25;
+
+    const originalStructuredClone = globalThis.structuredClone;
+    globalThis.structuredClone = () => {
+      throw new Error('clone failed');
+    };
+
+    try {
+      const action = chooseMonteCarloBotAction(state, bot.id, () => 0.5);
+      expect(action).toBeTruthy();
+      expect(action.type).toBe('BUY_STOCKS');
+    } finally {
+      globalThis.structuredClone = originalStructuredClone;
+    }
+  });
+
   it('monte carlo bot beats random bot more than half the time', () => {
     const result = runMonteCarloVsRandomBenchmark({
       matchCount: 4,

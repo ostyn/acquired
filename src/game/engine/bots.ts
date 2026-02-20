@@ -516,7 +516,12 @@ function tieBreakerScore(action: any): number {
 
 function cloneGameState(state: GameState): GameState {
   if (typeof structuredClone === 'function') {
-    return structuredClone(state);
+    try {
+      return structuredClone(state);
+    } catch {
+      // Some runtime wrappers (for example observable proxies) are not structured-cloneable.
+      // Fall through to JSON cloning so bot simulations can proceed.
+    }
   }
   return JSON.parse(JSON.stringify(state));
 }
