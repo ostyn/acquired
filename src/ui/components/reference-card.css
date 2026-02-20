@@ -57,6 +57,14 @@
   margin-top: 0.95rem;
 }
 
+.manual-transcript {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.82rem;
+  line-height: 1.42;
+}
+
 .manual-list {
   margin: 0 0 0.2rem 1.2rem;
 }

@@ -6,7 +6,8 @@
 import { html } from 'lit';
 import { HOTELS, PRICE_BRACKETS } from '../../game/constants';
 import { renderChainBadge } from './chain-display';
-import { t } from '../i18n';
+import { getActiveLocale, t } from '../i18n';
+import { getManualTranscript } from './manual-transcripts';
 
 type ReferenceCardOptions = {
   onOpenManual?: () => void;
@@ -53,9 +54,6 @@ export function buildManualTurnSteps() {
     'Draw back up to your normal hand size.',
   ];
 }
-
-const MANUAL_GLOSSARY = buildManualGlossaryEntries();
-const MANUAL_TURN_STEPS = buildManualTurnSteps();
 
 export function rangeLabel(min, max) {
   if (max === Number.POSITIVE_INFINITY) {
@@ -148,48 +146,11 @@ export function renderReferenceCard({ onOpenManual }: ReferenceCardOptions = {})
 }
 
 export function renderUserManualCard({ onBackToReference }: UserManualCardOptions = {}) {
+  const manualTranscript = getManualTranscript(getActiveLocale());
+
   return html`
     <section class="reference-card manual-card">
-      <p>
-        The app uses <strong>chain</strong> as the primary board term and <strong>share</strong> for ownership.
-        This matches the original Acquire manual concept of hotel chains and stock certificates.
-      </p>
-
-      <h4>Core Terms</h4>
-      <dl class="manual-definition-list">
-        ${MANUAL_GLOSSARY.map(
-          (entry) => html`
-            <div class="manual-definition-row">
-              <dt>${entry.term}</dt>
-              <dd>${entry.definition}</dd>
-            </div>
-          `,
-        )}
-      </dl>
-
-      <h4>Turn Flow</h4>
-      <ol class="manual-list">
-        ${MANUAL_TURN_STEPS.map((step) => html`<li>${step}</li>`)}
-      </ol>
-
-      <h4>Merge Flow</h4>
-      <ul class="manual-list">
-        <li>The largest adjacent chain survives. Ties are chosen by the active player.</li>
-        <li>Defunct chain bonuses are paid first: majority bonus, then minority bonus.</li>
-        <li>Shareholders of each defunct chain then choose to hold, sell, or trade shares (2-for-1).</li>
-      </ul>
-
-      <h4>Ending The Game</h4>
-      <ul class="manual-list">
-        <li>End game can be declared during a buy step when any chain is size 41+ or all active chains are safe.</li>
-        <li>Final scoring tallies remaining chain bonuses and all remaining shares.</li>
-      </ul>
-
-      <h4>2-Player Rule</h4>
-      <p>
-        The stock market counts as an extra shareholder only for majority/minority bonus calculation.
-        Players still choose share disposition normally.
-      </p>
+      <pre class="manual-transcript">${manualTranscript}</pre>
 
       ${typeof onBackToReference === 'function'
         ? html`

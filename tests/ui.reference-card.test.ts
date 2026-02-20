@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PRICE_BRACKETS } from '../src/game/constants';
+import { getSupportedLocales } from '../src/ui/i18n';
+import { getManualTranscript } from '../src/ui/components/manual-transcripts';
 import {
   buildManualGlossaryEntries,
   buildManualTurnSteps,
@@ -52,5 +54,20 @@ describe('reference card helpers', () => {
       'Buy up to 3 shares (or pass).',
       'Draw back up to your normal hand size.',
     ]);
+  });
+
+  it('provides a full manual transcript for every supported locale', () => {
+    for (const locale of getSupportedLocales()) {
+      const transcript = getManualTranscript(locale);
+      expect(transcript.length).toBeGreaterThan(2000);
+      expect(transcript).toContain('CBAQR-72');
+    }
+  });
+
+  it('uses localized headings for translated manuals', () => {
+    expect(getManualTranscript('en').startsWith('HOW TO PLAY ACQUIRE')).toBe(true);
+    expect(getManualTranscript('es').startsWith('COMO JUGAR ACQUIRE')).toBe(true);
+    expect(getManualTranscript('fr').startsWith('COMMENT JOUER A ACQUIRE')).toBe(true);
+    expect(getManualTranscript('bg').startsWith('КАК СЕ ИГРАЕ ACQUIRE')).toBe(true);
   });
 });
