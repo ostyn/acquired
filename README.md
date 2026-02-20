@@ -10,6 +10,7 @@ A browser implementation of **Acquire** with a peer-to-peer architecture:
 ## Features
 
 - Multiplayer room host/join flow
+- Installable PWA with offline app-shell support
 - Full Acquire turn flow:
   - tile placement
   - chain founding
@@ -53,3 +54,5 @@ yarn dev
 - The host peer validates and applies all actions.
 - Guests only send actions and render host snapshots.
 - Bots are intentionally random for now and use legal-action sampling.
+- For offline use, open the app once while online so assets are cached by the service worker.
+- PWA is built with `vite-plugin-pwa` (Workbox `generateSW`).
