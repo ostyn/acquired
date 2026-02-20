@@ -19,7 +19,7 @@ A browser implementation of **Acquire** with a peer-to-peer architecture:
   - sell/trade/hold decisions for defunct chains
   - up to 3 stock purchases per turn
   - end-game detection and final scoring
-- Random bot players (host-controlled)
+- Bot players (host-controlled): random and Monte Carlo
 
 ## Install
 
@@ -42,6 +42,21 @@ yarn dev
 - `yarn preview` - preview build
 - `yarn test` - run unit tests
 - `yarn typecheck` - TypeScript type check
+- `yarn bot:benchmark --matches=20 --rolloutBudget=64 --rootActionCap=24 --maxRolloutSteps=80` - run deterministic Monte Carlo-vs-random benchmark
+
+## Bot Difficulty
+
+Monte Carlo bot strength/speed is controlled by these defaults in `src/game/engine/bots.ts`:
+
+- `DEFAULT_ROOT_ACTION_CAP` (default `24`): max number of candidate moves considered at the root decision.
+  Higher = explores more possible moves before choosing, usually stronger but slower.
+- `DEFAULT_ROLLOUT_BUDGET` (default `64`): total rollout simulations budget split across root candidates.
+  Higher = more samples per move, less noisy decisions, slower turns.
+- `DEFAULT_MAX_ROLLOUT_STEPS` (default `80`): max simulated action depth for each rollout.
+  Higher = looks further ahead, potentially better strategic choices, slower evaluations.
+
+In short: increasing any of these tends to make the bot stronger and slower; decreasing them makes it faster and weaker.
+For one-off experiments, prefer CLI overrides via `yarn bot:benchmark` flags instead of editing source defaults.
 
 ## Architecture
 
@@ -53,6 +68,6 @@ yarn dev
 
 - The host peer validates and applies all actions.
 - Guests only send actions and render host snapshots.
-- Bots are intentionally random for now and use legal-action sampling.
+- Bots support both random and Monte Carlo policies (host currently defaults to Monte Carlo).
 - For offline use, open the app once while online so assets are cached by the service worker.
 - PWA is built with `vite-plugin-pwa` (Workbox `generateSW`).

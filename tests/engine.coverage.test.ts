@@ -10,6 +10,7 @@ import {
   isTilePlayable,
   markPlayerConnection,
   removePlayerFromLobby,
+  runMonteCarloVsRandomBenchmark,
   setLobbySettings,
   startGame,
   toPublicState,
@@ -757,5 +758,12 @@ describe('acquire engine extra coverage', () => {
 
     expect(action.type).toBe('BUY_STOCKS');
     expect(action.endGame).toBe(true);
+  });
+
+  it('monte carlo bot beats random bot more than half the time', () => {
+    const result = runMonteCarloVsRandomBenchmark({
+      matchCount: 4,
+    });
+    expect(result.scoreRate).toBeGreaterThan(0.5);
   });
 });

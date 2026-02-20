@@ -4,7 +4,14 @@
  */
 
 export { applyAction, getExpectedActorId } from './actions';
-export { BOT_STRATEGIES, chooseBotAction, chooseMonteCarloBotAction, chooseRandomBotAction } from './bots';
+export {
+  BOT_STRATEGIES,
+  DEFAULT_MONTE_CARLO_BOT_CONFIG,
+  chooseBotAction,
+  chooseMonteCarloBotAction,
+  chooseRandomBotAction,
+} from './bots';
+export { playMonteCarloVsRandomMatch, runMonteCarloVsRandomBenchmark } from './bot-benchmark';
 export { isTilePlayable } from './board';
 export { getLegalActions } from './legal-actions';
 export { pushLegacyLog, pushLogEvent } from './helpers';
@@ -32,4 +39,5 @@ export type {
   Stocks,
 } from './types';
 
-export type { BotStrategy } from './bots';
+export type { BotStrategy, MonteCarloBotConfig } from './bots';
+export type { BotBenchmarkOptions, BotBenchmarkResult, BotMatchResult } from './bot-benchmark';

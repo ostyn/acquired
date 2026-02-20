@@ -10,9 +10,9 @@ import { getPlayer } from './helpers';
 import { getLegalActions } from './legal-actions';
 import type { GameState } from './types';
 
-const ROOT_ACTION_CAP = 24;
-const ROLLOUT_BUDGET = 64;
-const MAX_ROLLOUT_STEPS = 80;
+const DEFAULT_ROOT_ACTION_CAP = 24;
+const DEFAULT_ROLLOUT_BUDGET = 64;
+const DEFAULT_MAX_ROLLOUT_STEPS = 80;
 
 export const BOT_STRATEGIES = {
   RANDOM: 'random',
@@ -21,17 +21,35 @@ export const BOT_STRATEGIES = {
 
 export type BotStrategy = (typeof BOT_STRATEGIES)[keyof typeof BOT_STRATEGIES];
 
+export type MonteCarloBotConfig = {
+  rootActionCap: number;
+  rolloutBudget: number;
+  maxRolloutSteps: number;
+};
+
+export const DEFAULT_MONTE_CARLO_BOT_CONFIG: MonteCarloBotConfig = {
+  rootActionCap: DEFAULT_ROOT_ACTION_CAP,
+  rolloutBudget: DEFAULT_ROLLOUT_BUDGET,
+  maxRolloutSteps: DEFAULT_MAX_ROLLOUT_STEPS,
+};
+
 export function chooseRandomBotAction(state: GameState, botId: string, rng: () => number = Math.random): any {
   return chooseRandomActionForActor(state, botId, rng);
 }
 
-export function chooseMonteCarloBotAction(state: GameState, botId: string, rng: () => number = Math.random): any {
+export function chooseMonteCarloBotAction(
+  state: GameState,
+  botId: string,
+  rng: () => number = Math.random,
+  config: Partial<MonteCarloBotConfig> = {},
+): any {
   const legal = getLegalActions(state, botId);
   if (!legal.allowed) {
     return null;
   }
 
-  const candidateActions = capRootActions(buildCandidateActions(state, botId), rng);
+  const resolvedConfig = resolveMonteCarloConfig(config);
+  const candidateActions = capRootActions(buildCandidateActions(state, botId), rng, resolvedConfig.rootActionCap);
   if (!candidateActions.length) {
     return chooseRandomActionForActor(state, botId, rng);
   }
@@ -40,7 +58,7 @@ export function chooseMonteCarloBotAction(state: GameState, botId: string, rng: 
     return candidateActions[0];
   }
 
-  const simulationsPerAction = Math.max(1, Math.floor(ROLLOUT_BUDGET / candidateActions.length));
+  const simulationsPerAction = Math.max(1, Math.floor(resolvedConfig.rolloutBudget / candidateActions.length));
   let bestAction = candidateActions[0];
   let bestScore = Number.NEGATIVE_INFINITY;
   let bestTieBreaker = tieBreakerScore(bestAction);
@@ -48,7 +66,7 @@ export function chooseMonteCarloBotAction(state: GameState, botId: string, rng: 
   for (const action of candidateActions) {
     let totalScore = 0;
     for (let index = 0; index < simulationsPerAction; index += 1) {
-      totalScore += evaluateAction(state, botId, action, rng);
+      totalScore += evaluateAction(state, botId, action, rng, resolvedConfig);
     }
     const averageScore = totalScore / simulationsPerAction;
     const tieBreaker = tieBreakerScore(action);
@@ -68,11 +86,12 @@ export function chooseBotAction(
   botId: string,
   strategy: BotStrategy = BOT_STRATEGIES.MONTE_CARLO,
   rng: () => number = Math.random,
+  monteCarloConfig: Partial<MonteCarloBotConfig> = {},
 ): any {
   if (strategy === BOT_STRATEGIES.RANDOM) {
     return chooseRandomBotAction(state, botId, rng);
   }
-  return chooseMonteCarloBotAction(state, botId, rng);
+  return chooseMonteCarloBotAction(state, botId, rng, monteCarloConfig);
 }
 
 function chooseRandomActionForActor(state: GameState, actorId: string, rng: () => number = Math.random): any {
@@ -360,9 +379,9 @@ function actionSignature(action: any): string {
   }
 }
 
-function capRootActions(actions: any[], rng: () => number): any[] {
+function capRootActions(actions: any[], rng: () => number, rootActionCap: number): any[] {
   const deduped = dedupeActions(actions);
-  if (deduped.length <= ROOT_ACTION_CAP) {
+  if (deduped.length <= rootActionCap) {
     return deduped;
   }
 
@@ -370,7 +389,7 @@ function capRootActions(actions: any[], rng: () => number): any[] {
   const selectedKeys = new Set<string>();
 
   const addIfNeeded = (action: any) => {
-    if (!action || selected.length >= ROOT_ACTION_CAP) {
+    if (!action || selected.length >= rootActionCap) {
       return;
     }
     const key = actionSignature(action);
@@ -398,7 +417,7 @@ function capRootActions(actions: any[], rng: () => number): any[] {
 
   for (const action of shuffle(deduped, rng)) {
     addIfNeeded(action);
-    if (selected.length >= ROOT_ACTION_CAP) {
+    if (selected.length >= rootActionCap) {
       break;
     }
   }
@@ -406,17 +425,23 @@ function capRootActions(actions: any[], rng: () => number): any[] {
   return selected;
 }
 
-function evaluateAction(state: GameState, botId: string, action: any, rng: () => number): number {
+function evaluateAction(
+  state: GameState,
+  botId: string,
+  action: any,
+  rng: () => number,
+  config: MonteCarloBotConfig,
+): number {
   const simulation = cloneGameState(state);
   const applied = applyAction(simulation, botId, action);
   if (!applied.ok) {
     return 0;
   }
-  return runRandomRollout(simulation, botId, rng);
+  return runRandomRollout(simulation, botId, rng, config.maxRolloutSteps);
 }
 
-function runRandomRollout(state: GameState, botId: string, rng: () => number): number {
-  for (let step = 0; step < MAX_ROLLOUT_STEPS; step += 1) {
+function runRandomRollout(state: GameState, botId: string, rng: () => number, maxRolloutSteps: number): number {
+  for (let step = 0; step < maxRolloutSteps; step += 1) {
     if (state.phase === PHASES.GAME_OVER || state.gameEnded) {
       return terminalScore(state, botId);
     }
@@ -494,4 +519,20 @@ function cloneGameState(state: GameState): GameState {
     return structuredClone(state);
   }
   return JSON.parse(JSON.stringify(state));
+}
+
+function resolveMonteCarloConfig(config: Partial<MonteCarloBotConfig>): MonteCarloBotConfig {
+  return {
+    rootActionCap: normalizePositiveInteger(config.rootActionCap, DEFAULT_MONTE_CARLO_BOT_CONFIG.rootActionCap),
+    rolloutBudget: normalizePositiveInteger(config.rolloutBudget, DEFAULT_MONTE_CARLO_BOT_CONFIG.rolloutBudget),
+    maxRolloutSteps: normalizePositiveInteger(config.maxRolloutSteps, DEFAULT_MONTE_CARLO_BOT_CONFIG.maxRolloutSteps),
+  };
+}
+
+function normalizePositiveInteger(rawValue: unknown, fallback: number): number {
+  const number = Number(rawValue);
+  if (!Number.isInteger(number) || number <= 0) {
+    return fallback;
+  }
+  return number;
 }
