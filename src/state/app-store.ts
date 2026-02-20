@@ -9,7 +9,8 @@ import { v4 as uuidv4 } from "uuid";
 import {
   addPlayerToLobby,
   applyAction,
-  chooseRandomBotAction,
+  BOT_STRATEGIES,
+  chooseBotAction,
   createLobbyState,
   getExpectedActorId,
   markPlayerConnection,
@@ -30,6 +31,7 @@ const GUEST_INITIAL_STATE_TIMEOUT_MS = 15000;
 const MAX_PLAYER_NAME_LENGTH = 24;
 const BOT_THINK_BASE_MS = 550;
 const BOT_THINK_JITTER_MS = 550;
+const DEFAULT_BOT_STRATEGY = BOT_STRATEGIES.MONTE_CARLO;
 const DEFAULT_ICE_SERVERS = [
   {
     urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"],
@@ -1177,7 +1179,7 @@ class AppStore {
         return;
       }
 
-      const botAction = chooseRandomBotAction(this.hostState, actingBot.id);
+      const botAction = chooseBotAction(this.hostState, actingBot.id, DEFAULT_BOT_STRATEGY);
       if (!botAction) {
         return;
       }

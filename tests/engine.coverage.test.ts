@@ -3,6 +3,7 @@ import { PHASES } from '../src/game/constants';
 import {
   addPlayerToLobby,
   applyAction,
+  chooseMonteCarloBotAction,
   chooseRandomBotAction,
   createLobbyState,
   getLegalActions,
@@ -731,5 +732,30 @@ describe('acquire engine extra coverage', () => {
     for (const chainId of action.chains) {
       expect(chainId).toBe('tower');
     }
+  });
+
+  it('monte carlo bot can choose ending the game when ahead', () => {
+    const state = createLobby(2, ['p2']);
+    startGame(state, () => 0.5);
+
+    const host = getPlayer(state, 'p1');
+    const bot = getPlayer(state, 'p2');
+
+    state.currentPlayerId = bot.id;
+    state.phase = PHASES.AWAIT_BUY;
+    state.pending = null;
+    state.requestGameEndAfterBuy = false;
+
+    state.hotels.tower.active = true;
+    state.hotels.tower.size = 41;
+    state.hotels.tower.availableShares = 25;
+
+    host.cash = 6000;
+    bot.cash = 14000;
+
+    const action = chooseMonteCarloBotAction(state, bot.id, () => 0.5);
+
+    expect(action.type).toBe('BUY_STOCKS');
+    expect(action.endGame).toBe(true);
   });
 });

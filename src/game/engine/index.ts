@@ -4,7 +4,7 @@
  */
 
 export { applyAction, getExpectedActorId } from './actions';
-export { chooseRandomBotAction } from './bots';
+export { BOT_STRATEGIES, chooseBotAction, chooseMonteCarloBotAction, chooseRandomBotAction } from './bots';
 export { isTilePlayable } from './board';
 export { getLegalActions } from './legal-actions';
 export { pushLegacyLog, pushLogEvent } from './helpers';
@@ -31,3 +31,5 @@ export type {
   PlayerState,
   Stocks,
 } from './types';
+
+export type { BotStrategy } from './bots';
