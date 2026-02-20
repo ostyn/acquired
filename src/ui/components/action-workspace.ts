@@ -97,12 +97,6 @@ function renderActionPanel({
     return html`<section class="action-content"><p>${t('workspace.waiting_buy', { name: waitingName })}</p></section>`;
   }
 
-  if (legal.phase === PHASES.AWAIT_TILE && legal.isTurn) {
-    return html`
-      <section class="action-content"><p>${t('workspace.place_tile_help')}</p></section>
-    `;
-  }
-
   if (legal.phase === PHASES.AWAIT_FOUND_CHAIN) {
     return html`
       <section class="action-content">
@@ -280,6 +274,32 @@ function renderActionPanel({
   if (legal.phase === PHASES.AWAIT_BUY && legal.isTurn) {
     const chainsById = Object.fromEntries(state.chains.map((chain) => [chain.id, chain]));
     const { remainingCash } = summarizeBuyQueue(buyQueue, chainsById, localPlayer?.cash || 0);
+    const activeChains = state.chains.filter((chain) => chain.active);
+    const queueSelectionCounts = new Map<string, number>();
+    for (const chainId of buyQueue) {
+      const current = queueSelectionCounts.get(chainId) || 0;
+      queueSelectionCounts.set(chainId, current + 1);
+    }
+
+    const chainBuyOptions = activeChains.map((chain) => {
+      const selectedForChain = queueSelectionCounts.get(chain.id) || 0;
+      const displayAvailableShares = Math.max(0, chain.availableShares - selectedForChain);
+      const canAdd =
+        buyQueue.length < 3
+        && displayAvailableShares > 0
+        && chain.price > 0
+        && chain.price <= remainingCash;
+
+      return {
+        chain,
+        selectedForChain,
+        displayAvailableShares,
+        canAdd,
+      };
+    });
+
+    const canQueueAnyShare = chainBuyOptions.some((option) => option.canAdd);
+    const canBuyAnything = canQueueAnyShare || buyQueue.length > 0;
 
     return html`
       <section class="action-content action-buy">
@@ -300,55 +320,51 @@ function renderActionPanel({
               </p>
             `
           : html``}
-        <div class="buy-token-picker">
-          ${state.chains
-            .filter((chain) => chain.active)
-            .map((chain) => {
-              const selectedForChain = buyQueue.filter((chainId) => chainId === chain.id).length;
-              const displayAvailableShares = Math.max(0, chain.availableShares - selectedForChain);
-              const canAdd =
-                buyQueue.length < 3
-                && displayAvailableShares > 0
-                && chain.price > 0
-                && chain.price <= remainingCash;
+        ${canQueueAnyShare
+          ? html`
+              <div class="buy-token-picker">
+                ${chainBuyOptions.map((option) => html`
+                  <button
+                    class="secondary action-choice-btn buy-chain-token"
+                    ?disabled=${!option.canAdd}
+                    @click=${() => onAddBuy(option.chain.id)}
+                    title=${t('workspace.buy_chain_title', {
+                      name: getChainDisplayName(option.chain.id),
+                      shares: option.displayAvailableShares,
+                    })}
+                  >
+                    ${renderChainBadge(option.chain.id, state.chains, { compact: true })}
+                    ${option.selectedForChain
+                      ? html`<span class="buy-chain-count">${option.selectedForChain}</span>`
+                      : html``}
+                  </button>
+                `)}
+              </div>
+              <p class="muted small buy-token-hint">${t('workspace.buy_token_hint')}</p>
+            `
+          : html`<p class="muted small buy-token-hint">${t('workspace.buy_unavailable')}</p>`}
 
-              return html`
-                <button
-                  class="secondary action-choice-btn buy-chain-token"
-                  ?disabled=${!canAdd}
-                  @click=${() => onAddBuy(chain.id)}
-                  title=${t('workspace.buy_chain_title', {
-                    name: getChainDisplayName(chain.id),
-                    shares: displayAvailableShares,
-                  })}
-                >
-                  ${renderChainBadge(chain.id, state.chains, { compact: true })}
-                  ${selectedForChain
-                    ? html`<span class="buy-chain-count">${selectedForChain}</span>`
-                    : html``}
-                </button>
-              `;
-            })}
-        </div>
-        <p class="muted small buy-token-hint">${t('workspace.buy_token_hint')}</p>
-
-        <div class="buy-queue">
-          <p class="action-heading"><strong>${t('workspace.shares_to_buy')}</strong></p>
-          ${buyQueue.length
-            ? html`
-                <div class="action-choice-grid buy-queue-list">
-                  ${buyQueue.map(
-                    (chainId, index) => html`
-                      <button class="secondary action-choice-btn buy-queue-chip" @click=${() => onRemoveBuy(index)}>
-                        ${renderChainBadge(chainId, state.chains, { compact: true })}
-                        <span aria-hidden="true">×</span>
-                      </button>
-                    `,
-                  )}
-                </div>
-              `
-            : html`<p class="muted">${t('common.none')}</p>`}
-        </div>
+        ${canBuyAnything
+          ? html`
+              <div class="buy-queue">
+                <p class="action-heading"><strong>${t('workspace.shares_to_buy')}</strong></p>
+                ${buyQueue.length
+                  ? html`
+                      <div class="action-choice-grid buy-queue-list">
+                        ${buyQueue.map(
+                          (chainId, index) => html`
+                            <button class="secondary action-choice-btn buy-queue-chip" @click=${() => onRemoveBuy(index)}>
+                              ${renderChainBadge(chainId, state.chains, { compact: true })}
+                              <span aria-hidden="true">×</span>
+                            </button>
+                          `,
+                        )}
+                      </div>
+                    `
+                  : html`<p class="muted">${t('common.none')}</p>`}
+              </div>
+            `
+          : html``}
       </section>
     `;
   }
@@ -437,7 +453,7 @@ export function renderDecisionWorkspace({
             </div>
             <p class="muted small">
               ${canPlaceTileNow
-                ? t('game.board_hint')
+                ? t('workspace.place_tile_hint')
                 : t('workspace.preview_hint')}
             </p>
             ${canPlaceTileNow && legal?.canSkipTile

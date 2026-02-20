@@ -524,7 +524,6 @@ export class RoomPage extends LitElement {
         <article class="board-stage">
           <div class="board-stage-head">
             <h3>${t('common.board')}</h3>
-            <p class="muted small">${t('game.board_hint')}</p>
           </div>
           ${renderBoard(state, {
             highlightedTileId: this.tilePreviewId,

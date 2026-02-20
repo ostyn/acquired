@@ -66,7 +66,7 @@ describe('turn utils', () => {
         },
         'Host',
       ),
-    ).toContain('Play one tile');
+    ).toBe('After placing, buy up to 3 shares or pass.');
 
     expect(
       turnInstruction(
