@@ -451,6 +451,12 @@ export class RoomPage extends LitElement {
       const ranked = [...state.players].sort((left, right) => right.cash - left.cash);
 
       return html`
+        ${renderGameHud({
+          state,
+          buyQueue: this.buyQueue,
+          localPlayerId: appStore.localPlayerId,
+        })}
+
         <article>
           <h2>${t('game.game_over')}</h2>
           <p>
