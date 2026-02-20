@@ -4,14 +4,13 @@
  */
 
 .hand {
-  --hand-tile-size: 2.25rem;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: var(--hand-tile-size);
+  grid-auto-columns: minmax(0, 1fr);
   gap: 0.35rem;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
   padding-bottom: 0.1rem;
 }
 
@@ -23,10 +22,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: var(--hand-tile-size);
-  min-inline-size: var(--hand-tile-size);
-  block-size: var(--hand-tile-size);
-  min-block-size: var(--hand-tile-size);
+  inline-size: 100%;
+  min-inline-size: 0;
+  aspect-ratio: 1 / 1;
   padding: 0.12rem;
   font-size: 0.82rem;
   line-height: 1;
@@ -332,10 +330,9 @@
 }
 
 .tiles-box .hand .tile-chip {
-  inline-size: var(--hand-tile-size);
-  min-inline-size: var(--hand-tile-size);
-  block-size: var(--hand-tile-size);
-  min-block-size: var(--hand-tile-size);
+  inline-size: 100%;
+  min-inline-size: 0;
+  aspect-ratio: 1 / 1;
 }
 
 .tiles-box .muted.small {
