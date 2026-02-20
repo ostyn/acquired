@@ -59,6 +59,8 @@ export function advanceTurn(state: GameState): void {
 }
 
 export function finalizeGame(state: GameState): void {
+  pushLogEvent(state, 'game_tallying_final_chains', {}, 'Final scoring begins. Tallying all remaining chains.');
+
   for (const chain of activeChains(state)) {
     payoutBonuses(state, chain.id);
   }

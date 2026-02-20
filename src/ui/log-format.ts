@@ -132,6 +132,8 @@ export function formatLogEvent(event: GameLogEvent | null | undefined, locale?: 
         amount,
         chainName: chainNameFromParams(params, locale),
       }, locale);
+    case 'game_tallying_final_chains':
+      return t('log.game_tallying_final_chains', {}, locale);
     case 'player_replaced_unplayable_tiles':
       return t('log.player_replaced_unplayable_tiles', {
         playerName,

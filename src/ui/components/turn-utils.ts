@@ -11,6 +11,10 @@ export function actorForPhase(state) {
     return null;
   }
 
+  if (state.phase === PHASES.GAME_OVER || state.phase === PHASES.LOBBY) {
+    return null;
+  }
+
   if (state.phase === PHASES.AWAIT_FOUND_CHAIN) {
     return state.pending?.founderId || null;
   }

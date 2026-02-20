@@ -216,6 +216,7 @@ export const ES_MESSAGES: MessageCatalog = {
   'log.player_received_majority_bonus': `{playerName} recibe \${amount} de bono de mayoría por {chainName}.`,
   'log.player_received_minority_bonus': `{playerName} recibe \${amount} de bono de minoría por {chainName}.`,
   'log.player_received_tied_bonus': `{playerName} recibe \${amount} por mayoría/minoría empatadas de {chainName}.`,
+  'log.game_tallying_final_chains': `Comienza la puntuación final: se contabilizan cadenas y acciones restantes.`,
   'log.player_renamed': `{previousName} ahora se llama {nextName}.`,
   'log.player_replaced_unplayable_tiles': `{playerName} reemplaza {count} loseta(s) injugable(s).`,
   'log.player_skipped_tile_placement': `{playerName} omite la colocación de loseta.`,

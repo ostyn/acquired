@@ -540,6 +540,37 @@ describe('acquire engine extra coverage', () => {
     expect(state.gameEnded).toBe(true);
   });
 
+  it('logs end-game declaration and final-scoring context when ending from buy action', () => {
+    const state = createLobby();
+    startGame(state, () => 0.5);
+
+    const host = getPlayer(state, 'p1');
+    state.currentPlayerId = host.id;
+    state.phase = PHASES.AWAIT_BUY;
+
+    state.hotels.tower.active = true;
+    state.hotels.tower.size = 41;
+    state.hotels.tower.availableShares = 25;
+
+    const buy = applyAction(state, host.id, {
+      type: 'BUY_STOCKS',
+      chains: [],
+      endGame: true,
+    });
+
+    expect(buy.ok).toBe(true);
+    expect(state.phase).toBe(PHASES.GAME_OVER);
+
+    const keys = state.logEvents.map((event) => event.key);
+    const declarationIndex = keys.lastIndexOf('player_declared_end_game');
+    const tallyIndex = keys.lastIndexOf('game_tallying_final_chains');
+    const completeIndex = keys.lastIndexOf('game_ended_final_scoring');
+
+    expect(declarationIndex).toBeGreaterThanOrEqual(0);
+    expect(tallyIndex).toBeGreaterThan(declarationIndex);
+    expect(completeIndex).toBeGreaterThan(tallyIndex);
+  });
+
   it('rejects declaring end game when condition is not met', () => {
     const state = createLobby();
     startGame(state, () => 0.5);

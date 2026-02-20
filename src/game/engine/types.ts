@@ -58,6 +58,7 @@ export type GameLogKey =
   | 'player_received_majority_bonus'
   | 'player_received_additional_minority_bonus'
   | 'player_received_minority_bonus'
+  | 'game_tallying_final_chains'
   | 'player_replaced_unplayable_tiles'
   | 'game_ended_final_scoring'
   | 'player_renamed'

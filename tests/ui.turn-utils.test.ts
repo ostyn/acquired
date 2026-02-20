@@ -33,6 +33,13 @@ describe('turn utils', () => {
         currentPlayerId: 'p4',
       }),
     ).toBe('p4');
+
+    expect(
+      actorForPhase({
+        phase: PHASES.GAME_OVER,
+        currentPlayerId: 'p2',
+      }),
+    ).toBeNull();
   });
 
   it('formats phase labels', () => {

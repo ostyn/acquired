@@ -355,6 +355,7 @@ export const EN_MESSAGES: MessageCatalog = {
     'log.player_received_majority_bonus': '{playerName} receives ${amount} majority bonus for {chainName}.',
     'log.player_received_additional_minority_bonus': '{playerName} also receives ${amount} minority bonus for {chainName}.',
     'log.player_received_minority_bonus': '{playerName} receives ${amount} minority bonus for {chainName}.',
+    'log.game_tallying_final_chains': 'Final scoring begins: tallying remaining chains and holdings.',
     'log.player_replaced_unplayable_tiles': '{playerName} replaces {count} unplayable tile(s).',
     'log.game_ended_final_scoring': 'Game ended and final scoring complete.',
     'log.player_renamed': '{previousName} is now known as {nextName}.',

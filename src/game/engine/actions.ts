@@ -325,7 +325,12 @@ function resolveMergerDisposition(state: GameState, actorId: string, payload: an
   return { ok: true };
 }
 
-function resolveStockPurchase(state: GameState, actorId: string, chains: string[]): ActionResult {
+function resolveStockPurchase(
+  state: GameState,
+  actorId: string,
+  chains: string[],
+  requestEndGameAfterBuy = false,
+): ActionResult {
   if (state.phase !== PHASES.AWAIT_BUY) {
     return errorResult('error.stock_purchase_not_allowed_now');
   }
@@ -338,6 +343,15 @@ function resolveStockPurchase(state: GameState, actorId: string, chains: string[
   if (!player) {
     return errorResult('error.player_not_found');
   }
+
+  if (requestEndGameAfterBuy && !state.requestGameEndAfterBuy && canDeclareGameEnd(state)) {
+    pushLogEvent(
+      state,
+      'player_declared_end_game',
+      { playerId: player.id, playerName: player.name },
+    );
+  }
+  state.requestGameEndAfterBuy = state.requestGameEndAfterBuy || requestEndGameAfterBuy;
 
   const purchases = Array.isArray(chains) ? chains : [];
 
@@ -476,8 +490,7 @@ export function applyAction(state: GameState, actorId: string, action: any): Act
       return resolveMergerDisposition(state, actorId, payload);
 
     case 'BUY_STOCKS':
-      state.requestGameEndAfterBuy = state.requestGameEndAfterBuy || Boolean(payload.endGame);
-      return resolveStockPurchase(state, actorId, payload.chains);
+      return resolveStockPurchase(state, actorId, payload.chains, Boolean(payload.endGame));
 
     case 'DECLARE_END_GAME': {
       if (state.currentPlayerId !== actorId) {
@@ -509,8 +522,7 @@ export function applyAction(state: GameState, actorId: string, action: any): Act
       if (!canDeclareGameEnd(state)) {
         return errorResult('error.end_game_condition_not_met');
       }
-      state.requestGameEndAfterBuy = true;
-      return resolveStockPurchase(state, actorId, []);
+      return resolveStockPurchase(state, actorId, [], true);
 
     default:
       return errorResult('error.unknown_action_type');
