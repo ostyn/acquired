@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getConnectionStatusMeta, getLobbyStartControlState } from '../src/ui/components/room-hub';
+import {
+  getConnectionStatusMeta,
+  getLobbyStartControlState,
+  getRoomRoleLabel,
+  getSpectatorCount,
+} from '../src/ui/components/room-hub';
 
 describe('room hub lobby start control', () => {
   it('hides start button for guests and shows waiting copy', () => {
@@ -74,5 +79,29 @@ describe('room hub connection status copy', () => {
       label: 'Connecting',
       detail: 'Joining CE6XV7...',
     });
+  });
+});
+
+describe('room hub role label', () => {
+  it('shows host role when hosting', () => {
+    expect(getRoomRoleLabel(true, false)).toBe('Host');
+  });
+
+  it('shows spectator role when connected as spectator', () => {
+    expect(getRoomRoleLabel(false, true)).toBe('Spectator');
+  });
+
+  it('shows player role for normal guests', () => {
+    expect(getRoomRoleLabel(false, false)).toBe('Player');
+  });
+});
+
+describe('room hub spectator count', () => {
+  it('normalizes spectator counts to non-negative integers', () => {
+    expect(getSpectatorCount(3)).toBe(3);
+    expect(getSpectatorCount('2')).toBe(2);
+    expect(getSpectatorCount(1.8)).toBe(1);
+    expect(getSpectatorCount(-1)).toBe(0);
+    expect(getSpectatorCount(undefined)).toBe(0);
   });
 });

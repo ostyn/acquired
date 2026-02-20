@@ -29,6 +29,14 @@ type ConnectionStatusMeta = {
   detail: string;
 };
 
+export function getSpectatorCount(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return 0;
+  }
+  return Math.floor(numeric);
+}
+
 function normalizeStatusMessage(statusMessage: unknown): string {
   return typeof statusMessage === 'string' ? statusMessage.trim() : '';
 }
@@ -85,6 +93,16 @@ export function getConnectionStatusMeta(
   }
 }
 
+export function getRoomRoleLabel(isHost: boolean, isSpectator = false): string {
+  if (isHost) {
+    return t('common.host');
+  }
+  if (isSpectator) {
+    return t('common.spectator');
+  }
+  return t('common.player');
+}
+
 export function getLobbyStartControlState({
   isHost,
   playerCount,
@@ -124,6 +142,7 @@ export function getLobbyStartControlState({
 export function renderRoomHub({
   state,
   isHost,
+  isSpectator = false,
   inLobby = false,
   lobbyPlayerCount = 0,
   lobbyMaxPlayers = 6,
@@ -134,6 +153,7 @@ export function renderRoomHub({
   onLeave,
 }) {
   const statusMeta = getConnectionStatusMeta(connectionStatus, statusMessage);
+  const spectatorCount = getSpectatorCount(state?.spectatorCount);
   const startControl = inLobby
     ? getLobbyStartControlState({
         isHost,
@@ -160,13 +180,22 @@ export function renderRoomHub({
             </button>
           </span>
         </h2>
-        <p><strong>${t('common.role')}:</strong> ${isHost ? t('common.host') : t('common.player')}</p>
+        <p><strong>${t('common.role')}:</strong> ${getRoomRoleLabel(isHost, isSpectator)}</p>
         <p>
           <strong>${t('common.status')}:</strong>
           <connection-status class="room-status-badge" status=${connectionStatus} variant="inline"></connection-status>
         </p>
         ${statusMeta.detail ? html`<p class="muted small room-status-detail">${statusMeta.detail}</p>` : html``}
         ${inLobby ? html`<p><strong>${t('common.players')}:</strong> ${lobbyPlayerCount} / ${lobbyMaxPlayers}</p>` : html``}
+        ${spectatorCount > 0
+          ? html`
+              <p>
+                <span class="room-spectator-badge" aria-label=${t('roomhub.spectators_label')}>
+                  👀 ${spectatorCount} ${t('roomhub.spectators_label')}
+                </span>
+              </p>
+            `
+          : html``}
         ${errorMessage ? html`<p style="color:#b00020;"><strong>${t('common.error')}:</strong> ${errorMessage}</p>` : html``}
       </div>
 

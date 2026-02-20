@@ -24,6 +24,7 @@ import type { ActionResult, BoardState, GameState } from './types';
 export function createLobbyState({ roomId, hostPlayer }: { roomId: string; hostPlayer: { id: string; name: string } }): GameState {
   const settings = {
     allowDeadTilePlacementAsUnincorporated: false,
+    allowSpectatorJoinAfterStart: false,
     excelStyleCoordinates: false,
     showPlayerCashOnTurnRail: false,
     showFullTurnRailLog: false,
@@ -119,6 +120,10 @@ export function setLobbySettings(state: GameState, actorId: string, settingsPatc
 
   if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'allowDeadTilePlacementAsUnincorporated')) {
     next.allowDeadTilePlacementAsUnincorporated = Boolean(settingsPatch.allowDeadTilePlacementAsUnincorporated);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'allowSpectatorJoinAfterStart')) {
+    next.allowSpectatorJoinAfterStart = Boolean(settingsPatch.allowSpectatorJoinAfterStart);
   }
 
   if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'excelStyleCoordinates')) {

@@ -599,6 +599,7 @@ export class RoomPage extends LitElement {
     return renderRoomHub({
       state,
       isHost: appStore.isHost,
+      isSpectator: appStore.isSpectator,
       inLobby,
       lobbyPlayerCount: state.players.length,
       lobbyMaxPlayers,

@@ -235,6 +235,8 @@ function sanitizeStateForViewer(state, viewerId) {
 class AppStore {
   role = "idle";
 
+  guestViewRole = "player";
+
   roomId = "";
 
   localPlayerId = "";
@@ -249,7 +251,13 @@ class AppStore {
 
   hostConnections = new Map();
 
+  spectatorConnections = new Map();
+
   peerIdToPlayerId = new Map();
+
+  peerIdToSpectatorId = new Map();
+
+  startedJoinFallbackToSpectatorTried = false;
 
   hostState = null;
 
@@ -527,6 +535,14 @@ class AppStore {
       }
     }
 
+    for (const connection of this.spectatorConnections.values()) {
+      try {
+        connection.close();
+      } catch {
+        // no-op
+      }
+    }
+
     if (this.peer) {
       try {
         this.peer.destroy();
@@ -538,7 +554,9 @@ class AppStore {
     this.peer = null;
     this.guestConnection = null;
     this.hostConnections.clear();
+    this.spectatorConnections.clear();
     this.peerIdToPlayerId.clear();
+    this.peerIdToSpectatorId.clear();
     this.lastPersistedDebugLogSignature = "";
   }
 
@@ -624,6 +642,10 @@ class AppStore {
     return this.role === "guest";
   }
 
+  get isSpectator() {
+    return this.isGuest && this.guestViewRole === "spectator";
+  }
+
   get localPlayer() {
     return (
       this.viewState?.players?.find(
@@ -651,6 +673,7 @@ class AppStore {
     this.resetRuntime();
 
     this.role = "host";
+    this.guestViewRole = "player";
     this.localName = normalizePlayerName(name) || "Host";
     this.localPlayerId = uuidv4();
     this.signalingUrl = signalingUrl?.trim() || this.signalingUrl;
@@ -715,6 +738,7 @@ class AppStore {
     }
 
     this.role = "host";
+    this.guestViewRole = "player";
     this.roomId = checkpoint.roomId;
     this.localPlayerId = checkpoint.localPlayerId;
     this.localName = checkpoint.localName || "Host";
@@ -780,19 +804,41 @@ class AppStore {
     return true;
   }
 
-  async joinRoom({ roomId, name, signalingUrl, iceServersJson }: { roomId: string; name: string; signalingUrl: string; iceServersJson?: string }) {
+  async joinRoom({
+    roomId,
+    name,
+    signalingUrl,
+    iceServersJson,
+    asSpectator = false,
+    preserveStartedJoinFallbackToSpectatorTried = false,
+  }: {
+    roomId: string;
+    name: string;
+    signalingUrl: string;
+    iceServersJson?: string;
+    asSpectator?: boolean;
+    preserveStartedJoinFallbackToSpectatorTried?: boolean;
+  }) {
+    const previousFallbackRetry = this.startedJoinFallbackToSpectatorTried;
     this.clearError();
     this.resetRuntime();
+    this.startedJoinFallbackToSpectatorTried = preserveStartedJoinFallbackToSpectatorTried
+      ? previousFallbackRetry
+      : false;
 
     this.role = "guest";
+    this.guestViewRole = asSpectator ? "spectator" : "player";
     this.roomId = roomId?.trim().toUpperCase() || "";
-    const savedIdentity = this.getSavedRoomIdentity(this.roomId);
-    this.localPlayerId = savedIdentity?.playerId || uuidv4();
-    this.localName =
-      normalizePlayerName(name) ||
-      normalizePlayerName(savedIdentity?.lastName) ||
-      "Guest";
-    this.saveRoomIdentity(this.roomId, this.localPlayerId, this.localName);
+    const savedIdentity = asSpectator ? null : this.getSavedRoomIdentity(this.roomId);
+    this.localPlayerId = asSpectator
+      ? `spectator-${uuidv4()}`
+      : savedIdentity?.playerId || uuidv4();
+    this.localName = normalizePlayerName(name)
+      || normalizePlayerName(savedIdentity?.lastName)
+      || (asSpectator ? "Spectator" : "Guest");
+    if (!asSpectator) {
+      this.saveRoomIdentity(this.roomId, this.localPlayerId, this.localName);
+    }
     this.signalingUrl = signalingUrl?.trim() || this.signalingUrl;
 
     const iceConfig = normalizeIceConfig(iceServersJson);
@@ -860,6 +906,7 @@ class AppStore {
         type: "intro",
         playerId: this.localPlayerId,
         name: this.localName,
+        viewerRole: this.guestViewRole,
       });
 
       this.scheduleGuestStateTimeout();
@@ -913,6 +960,13 @@ class AppStore {
           }
           this.broadcastState();
         }
+        return;
+      }
+
+      const spectatorId = this.peerIdToSpectatorId.get(connection.peer);
+      if (spectatorId) {
+        this.peerIdToSpectatorId.delete(connection.peer);
+        this.spectatorConnections.delete(spectatorId);
       }
     });
 
@@ -931,6 +985,9 @@ class AppStore {
     if (message.type === "intro") {
       const playerId = message.playerId;
       const name = normalizePlayerName(message.name) || "Guest";
+      const requestedViewerRole = message.viewerRole === "spectator" ? "spectator" : "player";
+      const hasStarted = this.hostState.phase !== PHASES.LOBBY;
+      const allowStartedSpectatorJoin = Boolean(this.hostState.settings?.allowSpectatorJoinAfterStart);
 
       if (!playerId) {
         connection.send({ type: "error", message: "Missing player id." });
@@ -938,10 +995,38 @@ class AppStore {
         return;
       }
 
-      if (
-        this.hostState.phase !== PHASES.LOBBY &&
-        !this.hostState.players.some((player) => player.id === playerId)
-      ) {
+      const existing = this.hostState.players.find(
+        (player) => player.id === playerId,
+      );
+      const canAutoSpectateLateJoin = Boolean(hasStarted && !existing && allowStartedSpectatorJoin);
+
+      if (requestedViewerRole === "spectator" && hasStarted && !allowStartedSpectatorJoin) {
+        connection.send({
+          type: "error",
+          message: "Game already started. New players cannot join.",
+          errorKey: "error.game_started_no_join",
+        });
+        connection.close();
+        return;
+      }
+
+      if (requestedViewerRole === "spectator" || canAutoSpectateLateJoin) {
+        const spectatorId = String(playerId);
+        this.peerIdToSpectatorId.set(connection.peer, spectatorId);
+        this.spectatorConnections.set(spectatorId, connection);
+
+        connection.send({
+          type: "intro_ack",
+          roomId: this.roomId,
+          hostId: this.localPlayerId,
+          viewerRole: "spectator",
+        });
+
+        this.broadcastState();
+        return;
+      }
+
+      if (hasStarted && !existing) {
         connection.send({
           type: "error",
           message: "Game already started. New players cannot join.",
@@ -950,9 +1035,6 @@ class AppStore {
         return;
       }
 
-      const existing = this.hostState.players.find(
-        (player) => player.id === playerId,
-      );
       if (existing) {
         existing.name = name;
         markPlayerConnection(this.hostState, playerId, true);
@@ -977,6 +1059,7 @@ class AppStore {
         type: "intro_ack",
         roomId: this.roomId,
         hostId: this.localPlayerId,
+        viewerRole: "player",
       });
 
       this.broadcastState();
@@ -986,7 +1069,16 @@ class AppStore {
     if (message.type === "action") {
       const playerId = this.peerIdToPlayerId.get(connection.peer);
       if (!playerId) {
-        connection.send({ type: "error", message: "Not registered in room." });
+        const spectatorId = this.peerIdToSpectatorId.get(connection.peer);
+        if (spectatorId) {
+          connection.send({
+            type: "error",
+            message: "Spectators cannot send game actions.",
+            errorKey: "error.spectators_cannot_act",
+          });
+        } else {
+          connection.send({ type: "error", message: "Not registered in room." });
+        }
         return;
       }
       this.applyHostAction(playerId, message.action, connection);
@@ -1058,6 +1150,28 @@ class AppStore {
     }
 
     if (message.type === "error") {
+      const tokenKey = typeof message.errorKey === "string" && message.errorKey
+        ? message.errorKey
+        : localizeKnownError(message.message || "")?.key;
+      const canRetryAsSpectator = Boolean(
+        this.role === "guest"
+        && this.guestViewRole === "player"
+        && !this.startedJoinFallbackToSpectatorTried
+        && tokenKey === "error.game_started_no_join",
+      );
+      if (canRetryAsSpectator) {
+        this.startedJoinFallbackToSpectatorTried = true;
+        void this.joinRoom({
+          roomId: this.roomId,
+          name: this.localName || "Spectator",
+          signalingUrl: this.signalingUrl,
+          iceServersJson: this.iceServersConfig,
+          asSpectator: true,
+          preserveStartedJoinFallbackToSpectatorTried: true,
+        });
+        return;
+      }
+
       if (typeof message.errorKey === "string" && message.errorKey) {
         this.setErrorToken(
           message.errorKey,
@@ -1072,6 +1186,12 @@ class AppStore {
     }
 
     if (message.type === "intro_ack") {
+      if (message.viewerRole === "spectator") {
+        this.guestViewRole = "spectator";
+      } else if (message.viewerRole === "player") {
+        this.guestViewRole = "player";
+      }
+
       this.setStatusToken(
         "status.joined_syncing",
         { roomId: message.roomId },
@@ -1085,7 +1205,11 @@ class AppStore {
     if (!this.hostState) {
       return;
     }
-    const state = toPublicState(this.hostState, this.localPlayerId);
+    const spectatorCount = this.spectatorConnections.size;
+    const state = {
+      ...toPublicState(this.hostState, this.localPlayerId),
+      spectatorCount,
+    };
     this.viewState = sanitizeStateForViewer(state, this.localPlayerId);
     this.persistDebugLog(this.hostState);
   }
@@ -1102,8 +1226,12 @@ class AppStore {
         continue;
       }
       try {
+        const spectatorCount = this.spectatorConnections.size;
         const scopedState = sanitizeStateForViewer(
-          toPublicState(this.hostState, playerId),
+          {
+            ...toPublicState(this.hostState, playerId),
+            spectatorCount,
+          },
           playerId,
         );
         connection.send({
@@ -1113,6 +1241,31 @@ class AppStore {
       } catch (error) {
         this.setError(
           `Could not send state to ${playerId}: ${error?.message || String(error)}`,
+        );
+      }
+    }
+
+    const spectatorCount = this.spectatorConnections.size;
+    const spectatorState = sanitizeStateForViewer(
+      {
+        ...toPublicState(this.hostState, ""),
+        spectatorCount,
+      },
+      "",
+    );
+    for (const [spectatorId, connection] of this.spectatorConnections.entries()) {
+      if (!connection.open) {
+        continue;
+      }
+
+      try {
+        connection.send({
+          type: "state",
+          state: spectatorState,
+        });
+      } catch (error) {
+        this.setError(
+          `Could not send state to spectator ${spectatorId}: ${error?.message || String(error)}`,
         );
       }
     }
@@ -1223,6 +1376,11 @@ class AppStore {
 
   sendAction(action) {
     this.clearError();
+
+    if (this.isSpectator) {
+      this.setErrorToken("error.spectators_cannot_act");
+      return;
+    }
 
     if (this.isHost) {
       this.applyHostAction(this.localPlayerId, action);
@@ -1407,6 +1565,8 @@ class AppStore {
   leaveRoom() {
     this.resetRuntime();
     this.role = "idle";
+    this.guestViewRole = "player";
+    this.startedJoinFallbackToSpectatorTried = false;
     this.roomId = "";
     this.hostState = null;
     this.viewState = null;

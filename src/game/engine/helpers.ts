@@ -29,6 +29,7 @@ export function initialStocks(): Stocks {
 export function defaultLobbySettings(): LobbySettings {
   return {
     allowDeadTilePlacementAsUnincorporated: false,
+    allowSpectatorJoinAfterStart: false,
     excelStyleCoordinates: false,
     showPlayerCashOnTurnRail: false,
     showFullTurnRailLog: false,
@@ -79,6 +80,7 @@ export function ensureLobbySettings(state: GameState): LobbySettings {
 
   const next = {
     allowDeadTilePlacementAsUnincorporated: Boolean(current.allowDeadTilePlacementAsUnincorporated),
+    allowSpectatorJoinAfterStart: Boolean(current.allowSpectatorJoinAfterStart),
     excelStyleCoordinates: Boolean(current.excelStyleCoordinates),
     showPlayerCashOnTurnRail: Boolean(current.showPlayerCashOnTurnRail),
     showFullTurnRailLog: Boolean(current.showFullTurnRailLog),
@@ -91,6 +93,7 @@ export function ensureLobbySettings(state: GameState): LobbySettings {
   if (
     !state.settings
     || state.settings.allowDeadTilePlacementAsUnincorporated !== next.allowDeadTilePlacementAsUnincorporated
+    || state.settings.allowSpectatorJoinAfterStart !== next.allowSpectatorJoinAfterStart
     || state.settings.excelStyleCoordinates !== next.excelStyleCoordinates
     || state.settings.showPlayerCashOnTurnRail !== next.showPlayerCashOnTurnRail
     || state.settings.showFullTurnRailLog !== next.showFullTurnRailLog

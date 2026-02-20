@@ -34,7 +34,7 @@ export class LobbyPage extends LitElement {
   signalingUrl = appStore.hostCheckpointMeta?.signalingUrl || appStore.signalingUrl;
 
   @state()
-  private mode: 'host' | 'join' = 'host';
+  private mode: 'host' | 'join' | 'spectate' = 'host';
 
   @state()
   private themeMode: ThemeMode = getActiveThemeMode();
@@ -90,6 +90,25 @@ export class LobbyPage extends LitElement {
       roomId: this.roomId,
       name: this.name,
       signalingUrl: this.signalingUrl,
+    });
+
+    if (ok) {
+      Router.go(roomPath(this.roomId.trim().toUpperCase()));
+    }
+  }
+
+  async handleSpectateRoom(event) {
+    event.preventDefault();
+    if (!this.roomId.trim()) {
+      appStore.setErrorToken('error.room_code_required');
+      return;
+    }
+
+    const ok = await appStore.joinRoom({
+      roomId: this.roomId,
+      name: this.name,
+      signalingUrl: this.signalingUrl,
+      asSpectator: true,
     });
 
     if (ok) {
@@ -196,6 +215,15 @@ export class LobbyPage extends LitElement {
           >
             ${t('lobby.mode_join')}
           </button>
+          <button
+            type="button"
+            class=${`secondary ${this.mode === 'spectate' ? 'is-active' : ''}`}
+            @click=${() => {
+              this.mode = 'spectate';
+            }}
+          >
+            ${t('lobby.mode_spectate')}
+          </button>
         </div>
 
         ${this.mode === 'host'
@@ -226,7 +254,7 @@ export class LobbyPage extends LitElement {
               </form>
             `
           : html`
-              <form @submit=${this.handleJoinRoom}>
+              <form @submit=${this.mode === 'spectate' ? this.handleSpectateRoom : this.handleJoinRoom}>
                 <label>
                   ${t('lobby.display_name')}
                   <input
@@ -257,7 +285,12 @@ export class LobbyPage extends LitElement {
                     required
                   />
                 </label>
-                <button type="submit" class="secondary">${t('lobby.join_room')}</button>
+                ${this.mode === 'spectate'
+                  ? html`<p class="hint">${t('lobby.spectate_hint')}</p>`
+                  : html``}
+                <button type="submit" class="secondary">
+                  ${this.mode === 'spectate' ? t('lobby.spectate_room') : t('lobby.join_room')}
+                </button>
               </form>
             `}
       </article>

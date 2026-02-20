@@ -19,6 +19,7 @@ export function normalizeLobbySettings(
     startingCash?: number | string;
     maxPlayers?: number | string;
     allowDeadTilePlacementAsUnincorporated?: boolean;
+    allowSpectatorJoinAfterStart?: boolean;
     excelStyleCoordinates?: boolean;
     showPlayerCashOnTurnRail?: boolean;
     showFullTurnRailLog?: boolean;
@@ -34,6 +35,7 @@ export function normalizeLobbySettings(
       ? Number(settings.maxPlayers)
       : MAX_PLAYER_COUNT,
     deadTilesAsUnincorporated: Boolean(settings.allowDeadTilePlacementAsUnincorporated),
+    allowSpectatorJoinAfterStart: Boolean(settings.allowSpectatorJoinAfterStart),
     excelStyleCoordinates: Boolean(settings.excelStyleCoordinates),
     showPlayerCashOnTurnRail: Boolean(settings.showPlayerCashOnTurnRail),
     showFullTurnRailLog: Boolean(settings.showFullTurnRailLog),
@@ -214,6 +216,17 @@ export function renderLobbyPanel({
                 <label class="lobby-toggle-label">
                   <input
                     type="checkbox"
+                    .checked=${settings.allowSpectatorJoinAfterStart}
+                    @change=${(event) =>
+                      onUpdateSettings({
+                        allowSpectatorJoinAfterStart: event.target.checked,
+                      })}
+                  />
+                  ${t('lobby.allow_started_spectators')}
+                </label>
+                <label class="lobby-toggle-label">
+                  <input
+                    type="checkbox"
                     .checked=${settings.excelStyleCoordinates}
                     @change=${(event) =>
                       onUpdateSettings({
@@ -280,6 +293,10 @@ export function renderLobbyPanel({
               <p>
                 <strong>${t('lobby.dead_tiles_label')}:</strong>
                 ${settings.deadTilesAsUnincorporated ? t('lobby.dead_tiles_played') : t('lobby.dead_tiles_temp')}
+              </p>
+              <p>
+                <strong>${t('lobby.started_spectators_label')}:</strong>
+                ${settings.allowSpectatorJoinAfterStart ? t('lobby.shown') : t('lobby.hidden')}
               </p>
               <p>
                 <strong>${t('lobby.coords_label')}:</strong>

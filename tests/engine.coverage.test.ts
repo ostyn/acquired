@@ -184,6 +184,7 @@ describe('acquire engine extra coverage', () => {
       startingCash: 12000,
       maxPlayers: 4,
       allowDeadTilePlacementAsUnincorporated: true,
+      allowSpectatorJoinAfterStart: true,
       showPlayerCashOnTurnRail: true,
       showFullTurnRailLog: true,
       fastBotTurns: true,
@@ -193,6 +194,7 @@ describe('acquire engine extra coverage', () => {
     expect(state.settings.startingCash).toBe(12000);
     expect(state.settings.maxPlayers).toBe(4);
     expect(state.settings.allowDeadTilePlacementAsUnincorporated).toBe(true);
+    expect(state.settings.allowSpectatorJoinAfterStart).toBe(true);
     expect(state.settings.showPlayerCashOnTurnRail).toBe(true);
     expect(state.settings.showFullTurnRailLog).toBe(true);
     expect(state.settings.fastBotTurns).toBe(true);
@@ -309,6 +311,7 @@ describe('acquire engine extra coverage', () => {
       startingCash: 9000,
       maxPlayers: 4,
       allowDeadTilePlacementAsUnincorporated: true,
+      allowSpectatorJoinAfterStart: true,
       showPlayerCashOnTurnRail: true,
     });
 
@@ -317,6 +320,7 @@ describe('acquire engine extra coverage', () => {
       startingCash: 9000,
       maxPlayers: 4,
       allowDeadTilePlacementAsUnincorporated: true,
+      allowSpectatorJoinAfterStart: true,
       showPlayerCashOnTurnRail: true,
     });
   });

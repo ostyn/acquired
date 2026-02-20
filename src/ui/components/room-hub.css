@@ -50,6 +50,19 @@
   margin-top: -0.1rem;
 }
 
+.room-spectator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: var(--surface-soft);
+  color: var(--pico-color);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .room-hub-main p {
   margin-bottom: 0.35rem;
 }
