@@ -6,7 +6,7 @@
 import { HAND_SIZE, HOTELS, PHASES } from '../constants';
 import { stockPrice } from '../utils';
 import { activeChains, getTilePlayability } from './board';
-import { drawTiles, getPlayer } from './helpers';
+import { drawTiles, getPlayer, pushLogEvent } from './helpers';
 import { payoutBonuses } from './mergers';
 import type { GameState, PlayerState } from './types';
 
@@ -32,7 +32,12 @@ export function replaceDeadTilesIfNeeded(state: GameState, player: PlayerState |
     player.tiles = player.tiles.filter((tileId) => !deadTiles.includes(tileId));
     state.discardPile.push(...deadTiles);
     drawTiles(state, player, deadTiles.length);
-    state.log.push(`${player.name} replaces ${deadTiles.length} unplayable tile(s).`);
+    pushLogEvent(
+      state,
+      'player_replaced_unplayable_tiles',
+      { playerId: player.id, playerName: player.name, count: deadTiles.length },
+      `${player.name} replaces ${deadTiles.length} unplayable tile(s).`,
+    );
   }
 }
 
@@ -77,5 +82,5 @@ export function finalizeGame(state: GameState): void {
   state.winnerIds = state.players.filter((player) => player.cash === highest).map((player) => player.id);
   state.phase = PHASES.GAME_OVER;
   state.gameEnded = true;
-  state.log.push('Game ended and final scoring complete.');
+  pushLogEvent(state, 'game_ended_final_scoring', {}, 'Game ended and final scoring complete.');
 }

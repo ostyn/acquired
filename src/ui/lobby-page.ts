@@ -13,6 +13,8 @@ import typographyStyles from './typography.css?inline';
 import { appStore } from '../state/app-store';
 import { getActiveThemeMode, toggleThemeMode, type ThemeMode } from './theme';
 import { roomPath } from './routes';
+import { connectionStatusLabel, formatLocalizedDateTime, subscribeToLocaleChanges, t } from './i18n';
+import './components/locale-switcher';
 
 @customElement('lobby-page')
 export class LobbyPage extends LitElement {
@@ -38,10 +40,14 @@ export class LobbyPage extends LitElement {
   private themeMode: ThemeMode = getActiveThemeMode();
 
   private disposeReaction: (() => void) | null = null;
+  private localeUnsubscribe: (() => void) | null = null;
 
   connectedCallback() {
     super.connectedCallback();
     this.syncThemeAttribute();
+    this.localeUnsubscribe = subscribeToLocaleChanges(() => {
+      this.requestUpdate();
+    });
     this.disposeReaction = autorun(() => {
       appStore.viewState;
       appStore.connectionStatus;
@@ -55,6 +61,10 @@ export class LobbyPage extends LitElement {
     super.disconnectedCallback();
     if (this.disposeReaction) {
       this.disposeReaction();
+    }
+    if (this.localeUnsubscribe) {
+      this.localeUnsubscribe();
+      this.localeUnsubscribe = null;
     }
   }
 
@@ -72,7 +82,7 @@ export class LobbyPage extends LitElement {
   async handleJoinRoom(event) {
     event.preventDefault();
     if (!this.roomId.trim()) {
-      appStore.setError('Room code is required.');
+      appStore.setErrorToken('error.room_code_required');
       return;
     }
 
@@ -138,30 +148,36 @@ export class LobbyPage extends LitElement {
   render() {
     const checkpoint = appStore.hostCheckpointMeta;
     const checkpointDate = checkpoint?.savedAt
-      ? new Date(checkpoint.savedAt).toLocaleString()
-      : 'Unknown';
-    const toggleLabel = this.themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+      ? formatLocalizedDateTime(checkpoint.savedAt)
+      : t('common.unknown');
+    const toggleLabel = this.themeMode === 'dark'
+      ? t('theme.switch_to_light')
+      : t('theme.switch_to_dark');
+    const appTitle = t('app.acquire');
 
     return html`
       <div class="page-toolbar">
-        <button
-          class="secondary outline theme-toggle-btn"
-          type="button"
-          @click=${() => this.toggleTheme()}
-          aria-label=${toggleLabel}
-          aria-pressed=${String(this.themeMode === 'dark')}
-          title=${toggleLabel}
-        >
-          ${this.renderThemeToggleIcon()}
-        </button>
+        <div class="page-toolbar-controls">
+          <locale-switcher></locale-switcher>
+          <button
+            class="secondary outline theme-toggle-btn"
+            type="button"
+            @click=${() => this.toggleTheme()}
+            aria-label=${toggleLabel}
+            aria-pressed=${String(this.themeMode === 'dark')}
+            title=${toggleLabel}
+          >
+            ${this.renderThemeToggleIcon()}
+          </button>
+        </div>
       </div>
 
       <article class="lobby-mode-panel">
-        <p class="lobby-app-title">Acquire</p>
-        <h2>Start Playing</h2>
-        <p class="lead">Choose whether you are hosting the room or joining an existing one.</p>
+        <p class="lobby-app-title">${appTitle}</p>
+        <h2>${t('lobby.start_playing')}</h2>
+        <p class="lead">${t('lobby.mode_help')}</p>
 
-        <div class="mode-tabs" role="tablist" aria-label="Lobby mode">
+        <div class="mode-tabs" role="tablist" aria-label=${t('lobby.start_playing')}>
           <button
             type="button"
             class=${`secondary ${this.mode === 'host' ? 'is-active' : ''}`}
@@ -169,7 +185,7 @@ export class LobbyPage extends LitElement {
               this.mode = 'host';
             }}
           >
-            Host
+            ${t('lobby.mode_host')}
           </button>
           <button
             type="button"
@@ -178,7 +194,7 @@ export class LobbyPage extends LitElement {
               this.mode = 'join';
             }}
           >
-            Join
+            ${t('lobby.mode_join')}
           </button>
         </div>
 
@@ -186,7 +202,7 @@ export class LobbyPage extends LitElement {
           ? html`
               <form @submit=${this.handleCreateRoom}>
                 <label>
-                  Display Name
+                  ${t('lobby.display_name')}
                   <input
                     .value=${this.name}
                     @input=${(event) => {
@@ -196,7 +212,7 @@ export class LobbyPage extends LitElement {
                   />
                 </label>
                 <label>
-                  Signaling URL
+                  ${t('lobby.signaling_url')}
                   <input
                     .value=${this.signalingUrl}
                     @input=${(event) => {
@@ -205,14 +221,14 @@ export class LobbyPage extends LitElement {
                     required
                   />
                 </label>
-                <p class="hint">Hosting is authoritative. Other players connect to your room code.</p>
-                <button type="submit">Create Room</button>
+                <p class="hint">${t('lobby.hosting_hint')}</p>
+                <button type="submit">${t('lobby.create_room')}</button>
               </form>
             `
           : html`
               <form @submit=${this.handleJoinRoom}>
                 <label>
-                  Display Name
+                  ${t('lobby.display_name')}
                   <input
                     .value=${this.name}
                     @input=${(event) => {
@@ -222,7 +238,7 @@ export class LobbyPage extends LitElement {
                   />
                 </label>
                 <label>
-                  Room Code
+                  ${t('lobby.room_code')}
                   <input
                     .value=${this.roomId}
                     @input=${(event) => {
@@ -232,7 +248,7 @@ export class LobbyPage extends LitElement {
                   />
                 </label>
                 <label>
-                  Signaling URL
+                  ${t('lobby.signaling_url')}
                   <input
                     .value=${this.signalingUrl}
                     @input=${(event) => {
@@ -241,34 +257,39 @@ export class LobbyPage extends LitElement {
                     required
                   />
                 </label>
-                <button type="submit" class="secondary">Join Room</button>
+                <button type="submit" class="secondary">${t('lobby.join_room')}</button>
               </form>
             `}
       </article>
 
       <section class="grid-2">
         <article>
-          <h3>Status</h3>
-          <p><strong>${appStore.connectionStatus}</strong> - ${appStore.statusMessage}</p>
+          <h3>${t('lobby.status_title')}</h3>
+          <p><strong>${connectionStatusLabel(appStore.connectionStatus)}</strong> - ${appStore.statusMessage}</p>
           ${appStore.errorMessage
-            ? html`<p style="color: #b00020"><strong>Error:</strong> ${appStore.errorMessage}</p>`
+            ? html`<p style="color: #b00020"><strong>${t('common.error')}:</strong> ${appStore.errorMessage}</p>`
             : html``}
-          <p class="hint">Default signaling endpoint: <code>https://0.peerjs.com/</code></p>
+          <p class="hint">${t('lobby.default_signaling')} <code>https://0.peerjs.com/</code></p>
         </article>
 
         ${checkpoint
           ? html`
               <article>
-                <h3>Resume Host Session</h3>
+                <h3>${t('lobby.resume_session')}</h3>
                 <p>
-                  Saved room <strong>${checkpoint.roomId}</strong> (${checkpoint.playerCount} players, phase:
-                  <code>${checkpoint.phase}</code>).
+                  ${t('lobby.saved_room', {
+                    roomId: checkpoint.roomId,
+                    playerCount: checkpoint.playerCount,
+                    phase: checkpoint.phase,
+                  })}
                 </p>
-                <p>Last checkpoint: ${checkpointDate}</p>
+                <p>${t('lobby.last_checkpoint', { timestamp: checkpointDate })}</p>
                 <div class="checkpoint-actions">
-                  <button @click=${this.handleResumeHost}>Resume Room ${checkpoint.roomId}</button>
+                  <button @click=${this.handleResumeHost}>
+                    ${t('lobby.resume_room', { roomId: checkpoint.roomId })}
+                  </button>
                   <button class="secondary outline" @click=${this.handleClearCheckpoint}>
-                    Delete Saved Checkpoint
+                    ${t('lobby.delete_checkpoint')}
                   </button>
                 </div>
               </article>

@@ -7,6 +7,7 @@ import { html } from 'lit';
 import { COLS, PHASES, ROWS } from '../../game/constants';
 import { chainInkColor } from './chain-display';
 import { formatTileLabel } from '../tile-label';
+import { getChainDisplayName, t } from '../i18n';
 
 export function getBoardTileView({
   state,
@@ -49,9 +50,10 @@ export function getBoardTileView({
 
   if (chainId) {
     const chain = chainById[chainId];
+    const chainName = getChainDisplayName(chainId);
     classes.push('chain');
     style = `--tile-chain-color:${chain?.color || '#ddd'}; --tile-chain-ink:${chainInkColor(chain?.id)};`;
-    marker = chain?.name?.slice(0, 2).toUpperCase() || 'H';
+    marker = chainName.slice(0, 2).toUpperCase();
   }
 
   return {
@@ -92,8 +94,8 @@ export function renderBoard(
             const canSelectTile = Boolean(onSelectTile && view.playableTarget);
             const buttonClasses = canSelectTile ? [...view.classes, 'board-interactive'] : view.classes;
             const actionHint = view.playConfirmTarget
-              ? `Play tile ${view.displayTileId}`
-              : `Preview tile ${view.displayTileId}`;
+              ? t('board.play_tile', { tile: view.displayTileId })
+              : t('board.preview_tile', { tile: view.displayTileId });
 
             return html`
               <button
@@ -101,7 +103,7 @@ export function renderBoard(
                 class=${buttonClasses.join(' ')}
                 style=${view.style}
                 ?disabled=${!canSelectTile}
-                aria-label=${canSelectTile ? actionHint : `Board tile ${view.displayTileId}`}
+                aria-label=${canSelectTile ? actionHint : t('board.tile_label', { tile: view.displayTileId })}
                 @click=${() => {
                   if (canSelectTile) {
                     onSelectTile(tileId);
@@ -110,7 +112,7 @@ export function renderBoard(
               >
                 <span class="tile-id">${view.displayTileId}</span>
                 ${view.marker ? html`<span class="tile-marker">${view.marker}</span>` : html``}
-                ${view.playConfirmTarget ? html`<span class="board-play-prompt">play?</span>` : html``}
+                ${view.playConfirmTarget ? html`<span class="board-play-prompt">${t('board.play_prompt')}</span>` : html``}
               </button>
             `;
           }),

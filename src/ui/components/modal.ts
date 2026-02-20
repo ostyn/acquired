@@ -4,6 +4,7 @@
  */
 
 import { html } from 'lit';
+import { t } from '../i18n';
 
 export function renderModal(title, body, onClose, modalClass = '') {
   return html`
@@ -17,7 +18,7 @@ export function renderModal(title, body, onClose, modalClass = '') {
       >
         <header class="modal-header">
           <h3>${title}</h3>
-          <button class="secondary" @click=${() => onClose()}>Close</button>
+          <button class="secondary" @click=${() => onClose()}>${t('modal.close')}</button>
         </header>
         <div class="modal-body">${body}</div>
       </section>

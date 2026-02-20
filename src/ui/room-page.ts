@@ -31,6 +31,8 @@ import { renderReferenceCard } from './components/reference-card';
 import { renderRoomHub } from './components/room-hub';
 import { getActiveThemeMode, toggleThemeMode, type ThemeMode } from './theme';
 import { appPath, extractRoomIdFromPath } from './routes';
+import { connectionStatusLabel, subscribeToLocaleChanges, t } from './i18n';
+import './components/locale-switcher';
 
 @customElement('room-page')
 export class RoomPage extends LitElement {
@@ -101,10 +103,14 @@ export class RoomPage extends LitElement {
   private roomHubPanelOpen = false;
 
   private disposeReaction: (() => void) | null = null;
+  private localeUnsubscribe: (() => void) | null = null;
 
   connectedCallback() {
     super.connectedCallback();
     this.syncThemeAttribute();
+    this.localeUnsubscribe = subscribeToLocaleChanges(() => {
+      this.requestUpdate();
+    });
     this.disposeReaction = autorun(() => {
       appStore.viewState;
       appStore.connectionStatus;
@@ -116,6 +122,10 @@ export class RoomPage extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    if (this.localeUnsubscribe) {
+      this.localeUnsubscribe();
+      this.localeUnsubscribe = null;
+    }
     if (this.disposeReaction) {
       this.disposeReaction();
     }
@@ -267,7 +277,7 @@ export class RoomPage extends LitElement {
   private saveLobbyNameEdit(playerId: string, currentName: string) {
     const nextName = (this.lobbyNameDrafts[playerId] ?? currentName).trim();
     if (!nextName) {
-      appStore.setError('Name cannot be empty.');
+      appStore.setErrorToken('error.name_empty');
       return;
     }
 
@@ -442,13 +452,16 @@ export class RoomPage extends LitElement {
 
       return html`
         <article>
-          <h2>Game Over</h2>
-          <p>Winner${winners.length > 1 ? 's' : ''}: ${winners.map((player) => player.name).join(', ')}</p>
+          <h2>${t('game.game_over')}</h2>
+          <p>
+            ${winners.length > 1 ? t('game.winners') : t('game.winner')}:
+            ${winners.map((player) => player.name).join(', ')}
+          </p>
           <table>
             <thead>
               <tr>
-                <th>Player</th>
-                <th>Cash</th>
+                <th>${t('common.player')}</th>
+                <th>${t('common.cash')}</th>
               </tr>
             </thead>
             <tbody>
@@ -465,13 +478,13 @@ export class RoomPage extends LitElement {
         </article>
 
         <article>
-          <h3>Final Board</h3>
+          <h3>${t('game.final_board')}</h3>
           ${renderBoard(state, {
             excelStyleCoordinates: Boolean(state.settings?.excelStyleCoordinates),
           })}
         </article>
 
-        ${renderChainPanel(state, 'Final Chains')}
+        ${renderChainPanel(state, t('game.final_chains'))}
       `;
     }
 
@@ -485,8 +498,8 @@ export class RoomPage extends LitElement {
       <section class="game-stage-layout">
         <article class="board-stage">
           <div class="board-stage-head">
-            <h3>Board</h3>
-            <p class="muted small">Click a hand tile or playable board tile to preview and place.</p>
+            <h3>${t('common.board')}</h3>
+            <p class="muted small">${t('game.board_hint')}</p>
           </div>
           ${renderBoard(state, {
             highlightedTileId: this.tilePreviewId,
@@ -533,7 +546,7 @@ export class RoomPage extends LitElement {
 
     return html`
       ${this.referenceModalOpen
-        ? renderModal('Quick Reference', renderReferenceCard(), () => this.closeReferenceModal(), 'modal-large')
+        ? renderModal(t('room.quick_reference'), renderReferenceCard(), () => this.closeReferenceModal(), 'modal-large')
         : html``}
     `;
   }
@@ -565,7 +578,7 @@ export class RoomPage extends LitElement {
         class="room-hub-panel-shell ${this.roomHubPanelOpen ? 'open' : ''}"
         role="dialog"
         aria-modal="false"
-        aria-label="Room details and actions"
+        aria-label=${t('room.details_dialog')}
         aria-hidden=${String(!this.roomHubPanelOpen)}
       >
         ${this.renderRoomHubCard(state, inLobby, lobbyMaxPlayers)}
@@ -576,13 +589,16 @@ export class RoomPage extends LitElement {
   render() {
     const state = appStore.viewState;
     const routeRoomId = this.getRouteRoomId();
-    const toggleLabel = this.themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    const toggleLabel = this.themeMode === 'dark'
+      ? t('theme.switch_to_light')
+      : t('theme.switch_to_dark');
 
     if (!state) {
       const waitingForHostState = appStore.isGuest && appStore.connectionStatus !== 'idle' && !appStore.errorMessage;
       return html`
         <div class="page-toolbar">
           <div class="page-toolbar-controls">
+            <locale-switcher></locale-switcher>
             <button
               class="secondary outline theme-toggle-btn"
               type="button"
@@ -597,17 +613,17 @@ export class RoomPage extends LitElement {
         </div>
 
         <article>
-          <h2>Room</h2>
+          <h2>${t('common.room')}</h2>
           <p>
             ${waitingForHostState
-              ? 'Waiting for room state from host...'
+              ? t('room.waiting_state')
               : routeRoomId
-                ? `No room state available yet for room ${routeRoomId}.`
-                : 'No room state available. Join or create a room first.'}
+                ? t('room.no_state_for_room', { roomId: routeRoomId })
+                : t('room.no_state')}
           </p>
-          <p><strong>Status:</strong> ${appStore.connectionStatus} - ${appStore.statusMessage}</p>
+          <p><strong>${t('common.status')}:</strong> ${connectionStatusLabel(appStore.connectionStatus)} - ${appStore.statusMessage}</p>
           ${appStore.errorMessage
-            ? html`<p style="color: #b00020"><strong>Error:</strong> ${appStore.errorMessage}</p>`
+            ? html`<p style="color: #b00020"><strong>${t('common.error')}:</strong> ${appStore.errorMessage}</p>`
             : html``}
           ${routeRoomId
             ? html`
@@ -616,11 +632,11 @@ export class RoomPage extends LitElement {
                   ?disabled=${this.autoJoinInFlight}
                   @click=${() => this.autoJoinRouteRoom(true)}
                 >
-                  ${this.autoJoinInFlight ? 'Joining...' : `Retry Join ${routeRoomId}`}
+                  ${this.autoJoinInFlight ? t('room.joining') : t('room.retry_join', { roomId: routeRoomId })}
                 </button>
               `
             : html``}
-          <button @click=${() => Router.go(appPath())}>Go To Lobby</button>
+          <button @click=${() => Router.go(appPath())}>${t('room.go_lobby')}</button>
         </article>
       `;
     }
@@ -629,14 +645,17 @@ export class RoomPage extends LitElement {
     const lobbyMaxPlayers = Number.isFinite(Number(state.settings?.maxPlayers))
       ? Number(state.settings.maxPlayers)
       : 6;
-    const roomPanelLabel = this.roomHubPanelOpen ? 'Hide room panel' : 'Show room panel';
+    const roomPanelLabel = this.roomHubPanelOpen ? t('room.hide_panel') : t('room.show_panel');
     const showReferenceToggle = !inLobby && state.phase !== PHASES.GAME_OVER;
     const showRoomPanelToggle = !inLobby;
-    const referenceToggleLabel = this.referenceModalOpen ? 'Hide quick reference' : 'Show quick reference';
+    const referenceToggleLabel = this.referenceModalOpen
+      ? t('room.hide_reference')
+      : t('room.show_reference');
 
     return html`
       <div class="page-toolbar">
         <div class="page-toolbar-controls">
+          <locale-switcher></locale-switcher>
           ${showReferenceToggle
             ? html`
                 <button

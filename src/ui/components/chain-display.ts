@@ -4,6 +4,7 @@
  */
 
 import { html } from 'lit';
+import { getChainDisplayName, t } from '../i18n';
 
 type BadgeOptions = {
   compact?: boolean;
@@ -111,7 +112,18 @@ export function splitTextByChainMentions(text, chains) {
     return [];
   }
 
-  const sorted = [...chains].sort((left, right) => right.name.length - left.name.length);
+  const sorted = [...chains]
+    .map((chain) => ({
+      ...chain,
+      aliases: Array.from(new Set([chain.name, getChainDisplayName(chain.id)]))
+        .filter(Boolean)
+        .sort((left, right) => right.length - left.length),
+    }))
+    .sort((left, right) => {
+      const leftLength = left.aliases[0]?.length || left.name.length;
+      const rightLength = right.aliases[0]?.length || right.name.length;
+      return rightLength - leftLength;
+    });
   const parts = [];
   let cursor = 0;
 
@@ -119,16 +131,18 @@ export function splitTextByChainMentions(text, chains) {
     let found = null;
 
     for (const chain of sorted) {
-      const pattern = new RegExp(`\\b${escapeRegExp(chain.name)}\\b`);
       const search = text.slice(cursor);
-      const match = search.match(pattern);
-      if (!match || match.index === undefined) {
-        continue;
-      }
+      for (const alias of chain.aliases) {
+        const pattern = new RegExp(`\\b${escapeRegExp(alias)}\\b`);
+        const match = search.match(pattern);
+        if (!match || match.index === undefined) {
+          continue;
+        }
 
-      const absoluteIndex = cursor + match.index;
-      if (!found || absoluteIndex < found.index) {
-        found = { chain, index: absoluteIndex };
+        const absoluteIndex = cursor + match.index;
+        if (!found || absoluteIndex < found.index) {
+          found = { chain, index: absoluteIndex, aliasLength: alias.length };
+        }
       }
     }
 
@@ -142,7 +156,7 @@ export function splitTextByChainMentions(text, chains) {
     }
 
     parts.push({ type: 'chain', chainId: found.chain.id });
-    cursor = found.index + found.chain.name.length;
+    cursor = found.index + found.aliasLength;
   }
 
   return parts;
@@ -168,7 +182,7 @@ export function renderChainBadge(chainId, chains, options: BadgeOptions = {}) {
       class=${classes.join(' ')}
       style=${`--badge-chain:${badgeColor}; --badge-chain-ink:${badgeInk};`}
     >
-      ${chain.name}${quantity}
+      ${getChainDisplayName(chain.id)}${quantity}
     </span>
   `;
 }
@@ -188,7 +202,7 @@ export function renderChainList(chainIds, chains, options: ChainListOptions = {}
 export function renderStockHoldings(stocks, chains) {
   const holdings = (Object.entries(stocks || {}) as Array<[string, number]>).filter(([, value]) => value > 0);
   if (!holdings.length) {
-    return 'None';
+    return t('common.none');
   }
 
   return html`
@@ -204,7 +218,7 @@ export function renderLastBuy(lastBuy, chains) {
   }
 
   if (!Array.isArray(lastBuy) || !lastBuy.length) {
-    return 'Pass';
+    return t('common.pass');
   }
 
   return renderChainList(lastBuy, chains, { emptyLabel: '-' });

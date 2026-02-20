@@ -31,6 +31,44 @@ export type LobbySettings = {
   startingCash: number;
 };
 
+export type GameLogParam = string | number | boolean;
+
+export type GameLogParams = Record<string, GameLogParam>;
+
+export type GameLogKey =
+  | 'lobby_created'
+  | 'player_joined_lobby'
+  | 'host_updated_lobby_settings'
+  | 'player_left_lobby'
+  | 'player_connected'
+  | 'player_disconnected'
+  | 'game_started'
+  | 'player_must_found_chain'
+  | 'player_placed_unincorporated_all_active'
+  | 'player_placed_unincorporated'
+  | 'player_grew_chain'
+  | 'player_triggered_merger'
+  | 'player_founded_chain_free_share'
+  | 'player_founded_chain'
+  | 'player_bought_stocks'
+  | 'player_passed_stock_buying'
+  | 'player_skipped_tile_placement'
+  | 'player_declared_end_game'
+  | 'player_received_tied_bonus'
+  | 'player_received_majority_bonus'
+  | 'player_received_additional_minority_bonus'
+  | 'player_received_minority_bonus'
+  | 'player_replaced_unplayable_tiles'
+  | 'game_ended_final_scoring'
+  | 'player_renamed'
+  | 'bot_action_failed'
+  | 'legacy';
+
+export type GameLogEvent = {
+  key: GameLogKey;
+  params: GameLogParams;
+};
+
 export type GameState = {
   roomId: string;
   hostId: string;
@@ -46,6 +84,7 @@ export type GameState = {
   requestGameEndAfterBuy: boolean;
   settings: LobbySettings;
   log: string[];
+  logEvents: GameLogEvent[];
   winnerIds: string[];
   gameEnded: boolean;
 };
@@ -53,6 +92,8 @@ export type GameState = {
 export type ActionResult = {
   ok: boolean;
   error?: string;
+  errorKey?: string;
+  errorParams?: GameLogParams;
 };
 
 export type LegalActions = {

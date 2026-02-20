@@ -10,6 +10,7 @@ import { tileSortValue } from '../../game/utils';
 import { renderChainBadge, renderStockHoldings } from './chain-display';
 import { actorForPhase, totalStockCount } from './turn-utils';
 import { formatTileLabel } from '../tile-label';
+import { formatCurrency, getChainDisplayName, t } from '../i18n';
 
 export function normalizeMergerTradeFrom(rawValue, maxTradeFrom, tradeUnit = 2) {
   const safeValue = Number.isFinite(rawValue) ? rawValue : 0;
@@ -62,22 +63,22 @@ function renderActionPanel({
   onSubmitMergerDecision,
 }) {
   if (!legal?.allowed) {
-    return html`<section class="action-content"><p>Waiting for game actions...</p></section>`;
+    return html`<section class="action-content"><p>${t('workspace.waiting_actions')}</p></section>`;
   }
 
-  const waitingName = actingPlayerName || 'another player';
+  const waitingName = actingPlayerName || t('common.player').toLowerCase();
 
   if (legal.phase === PHASES.AWAIT_TILE && !legal.isTurn) {
-    return html`<section class="action-content"><p>Waiting for ${waitingName} to place a tile.</p></section>`;
+    return html`<section class="action-content"><p>${t('workspace.waiting_tile', { name: waitingName })}</p></section>`;
   }
 
   if (legal.phase === PHASES.AWAIT_FOUND_CHAIN && (legal.foundingChoices || []).length === 0) {
-    return html`<section class="action-content"><p>Waiting for ${waitingName} to choose a chain.</p></section>`;
+    return html`<section class="action-content"><p>${t('workspace.waiting_chain_choice', { name: waitingName })}</p></section>`;
   }
 
   if (legal.phase === PHASES.AWAIT_MERGER_SURVIVOR && (legal.survivorChoices || []).length === 0) {
     return html`
-      <section class="action-content"><p>Waiting for ${waitingName} to choose the surviving chain.</p></section>
+      <section class="action-content"><p>${t('workspace.waiting_survivor', { name: waitingName })}</p></section>
     `;
   }
 
@@ -85,27 +86,27 @@ function renderActionPanel({
     legal.phase === PHASES.AWAIT_MERGER_DEFUNCT_ORDER
     && (legal.defunctOrderChoices || []).length === 0
   ) {
-    return html`<section class="action-content"><p>Waiting for ${waitingName} to choose merger order.</p></section>`;
+    return html`<section class="action-content"><p>${t('workspace.waiting_defunct_order', { name: waitingName })}</p></section>`;
   }
 
   if (legal.phase === PHASES.AWAIT_MERGER_DISPOSITION && !legal.mergerDisposition) {
-    return html`<section class="action-content"><p>Waiting for ${waitingName} to resolve merger stock.</p></section>`;
+    return html`<section class="action-content"><p>${t('workspace.waiting_merger_disposition', { name: waitingName })}</p></section>`;
   }
 
   if (legal.phase === PHASES.AWAIT_BUY && !legal.isTurn) {
-    return html`<section class="action-content"><p>Waiting for ${waitingName} to buy stock.</p></section>`;
+    return html`<section class="action-content"><p>${t('workspace.waiting_buy', { name: waitingName })}</p></section>`;
   }
 
   if (legal.phase === PHASES.AWAIT_TILE && legal.isTurn) {
     return html`
-      <section class="action-content"><p>Place one tile from your tile panel, then buy up to 3 shares.</p></section>
+      <section class="action-content"><p>${t('workspace.place_tile_help')}</p></section>
     `;
   }
 
   if (legal.phase === PHASES.AWAIT_FOUND_CHAIN) {
     return html`
       <section class="action-content">
-        <p class="action-heading"><strong>Choose New Chain</strong></p>
+        <p class="action-heading"><strong>${t('workspace.choose_new_chain')}</strong></p>
         ${renderChainChoiceButtons(legal.foundingChoices || [], 'CHOOSE_FOUNDING_CHAIN', state.chains, onSendAction)}
       </section>
     `;
@@ -114,7 +115,7 @@ function renderActionPanel({
   if (legal.phase === PHASES.AWAIT_MERGER_SURVIVOR) {
     return html`
       <section class="action-content">
-        <p class="action-heading"><strong>Choose Surviving Chain</strong></p>
+        <p class="action-heading"><strong>${t('workspace.choose_surviving_chain')}</strong></p>
         ${renderChainChoiceButtons(legal.survivorChoices || [], 'CHOOSE_MERGER_SURVIVOR', state.chains, onSendAction)}
       </section>
     `;
@@ -123,8 +124,8 @@ function renderActionPanel({
   if (legal.phase === PHASES.AWAIT_MERGER_DEFUNCT_ORDER) {
     return html`
       <section class="action-content">
-        <p class="action-heading"><strong>Choose Defunct Chain Order</strong></p>
-        <p>Tied defunct chains must be handled in your selected order.</p>
+        <p class="action-heading"><strong>${t('workspace.choose_defunct_order')}</strong></p>
+        <p>${t('workspace.defunct_order_help')}</p>
         ${renderChainChoiceButtons(
           legal.defunctOrderChoices || [],
           'CHOOSE_MERGER_DEFUNCT_CHAIN',
@@ -169,25 +170,29 @@ function renderActionPanel({
 
     return html`
       <section class="action-content">
-        <p class="action-heading"><strong>Merger Stock Decision</strong></p>
+        <p class="action-heading"><strong>${t('workspace.merger_decision')}</strong></p>
         <p>
-          ${renderChainBadge(decision.defunctChainId, state.chains)} is being acquired by
-          ${renderChainBadge(decision.survivingChainId, state.chains)}.
+          ${t('workspace.merger_acquire', {
+            defunct: getChainDisplayName(decision.defunctChainId),
+            survivor: getChainDisplayName(decision.survivingChainId),
+          })}
           <br />
-          You hold ${decision.owned} share(s).
-          ${renderChainBadge(decision.defunctChainId, state.chains, { compact: true })} sells for
-          $${decision.defunctPrice} each.
+          ${t('workspace.you_hold_shares', { count: decision.owned })}
+          ${t('workspace.sell_value', {
+            defunct: getChainDisplayName(decision.defunctChainId),
+            price: decision.defunctPrice,
+          })}
         </p>
         <div class="merger-decision-grid">
           <div class="merger-control-card">
-            <p class="action-heading"><strong>Trade Shares</strong></p>
-            <p class="muted small">Trade in blocks of ${tradeUnit} to gain survivor shares.</p>
+            <p class="action-heading"><strong>${t('workspace.trade_shares')}</strong></p>
+            <p class="muted small">${t('workspace.trade_help', { unit: tradeUnit })}</p>
             <div class="merger-stepper">
               <button
                 class="secondary merger-step-btn"
                 ?disabled=${normalizedTrade <= 0}
                 @click=${() => applyTradeValue(normalizedTrade - tradeUnit)}
-                aria-label="Trade fewer shares"
+                aria-label=${t('workspace.trade_fewer')}
               >
                 -
               </button>
@@ -196,7 +201,7 @@ function renderActionPanel({
                 class="secondary merger-step-btn"
                 ?disabled=${normalizedTrade >= maxTrade}
                 @click=${() => applyTradeValue(normalizedTrade + tradeUnit)}
-                aria-label="Trade more shares"
+                aria-label=${t('workspace.trade_more')}
               >
                 +
               </button>
@@ -207,26 +212,26 @@ function renderActionPanel({
                 ?disabled=${normalizedTrade === 0}
                 @click=${() => applyTradeValue(0)}
               >
-                Clear
+                ${t('workspace.clear')}
               </button>
               <button
                 class="secondary outline merger-quick-btn"
                 ?disabled=${normalizedTrade === maxTrade}
                 @click=${() => applyTradeValue(maxTrade)}
               >
-                Max Trade
+                ${t('workspace.max_trade')}
               </button>
             </div>
           </div>
           <div class="merger-control-card">
-            <p class="action-heading"><strong>Sell Shares</strong></p>
-            <p class="muted small">Sell defunct shares for cash immediately.</p>
+            <p class="action-heading"><strong>${t('workspace.sell_shares')}</strong></p>
+            <p class="muted small">${t('workspace.sell_help')}</p>
             <div class="merger-stepper">
               <button
                 class="secondary merger-step-btn"
                 ?disabled=${normalizedSell <= 0}
                 @click=${() => applySellValue(normalizedSell - 1)}
-                aria-label="Sell fewer shares"
+                aria-label=${t('workspace.sell_fewer')}
               >
                 -
               </button>
@@ -235,7 +240,7 @@ function renderActionPanel({
                 class="secondary merger-step-btn"
                 ?disabled=${normalizedSell >= dynamicMaxSell}
                 @click=${() => applySellValue(normalizedSell + 1)}
-                aria-label="Sell more shares"
+                aria-label=${t('workspace.sell_more')}
               >
                 +
               </button>
@@ -246,24 +251,27 @@ function renderActionPanel({
                 ?disabled=${normalizedSell === 0}
                 @click=${() => applySellValue(0)}
               >
-                Clear
+                ${t('workspace.clear')}
               </button>
               <button
                 class="secondary outline merger-quick-btn"
                 ?disabled=${normalizedSell === dynamicMaxSell}
                 @click=${() => applySellValue(dynamicMaxSell)}
               >
-                Sell All
+                ${t('workspace.sell_all')}
               </button>
             </div>
           </div>
         </div>
         <p class="muted small">
-          Result: gain ${gainedSurvivorShares} survivor share(s), hold ${resultingHold} defunct share(s), and sell
-          ${normalizedSell} share(s).
+          ${t('workspace.merger_result', {
+            gained: gainedSurvivorShares,
+            hold: resultingHold,
+            sell: normalizedSell,
+          })}
         </p>
         <button @click=${() => onSubmitMergerDecision(normalizedSell, normalizedTrade)}>
-          Submit Decision
+          ${t('workspace.submit_decision')}
         </button>
       </section>
     `;
@@ -275,20 +283,20 @@ function renderActionPanel({
 
     return html`
       <section class="action-content action-buy">
-        <p class="action-heading"><strong>Buy Stocks</strong></p>
+        <p class="action-heading"><strong>${t('workspace.buy_stocks')}</strong></p>
         <p class="buy-summary">
-          Select up to 3 shares. Cash after queued buys: <strong>$${remainingCash}</strong>.
+          ${t('workspace.buy_summary', { cash: formatCurrency(remainingCash) })}
         </p>
         <div class="grid-2 buy-confirm-grid">
-          <button @click=${() => onCommitBuy(false)}>End Turn</button>
+          <button @click=${() => onCommitBuy(false)}>${t('workspace.end_turn')}</button>
           ${legal.canEndGame
-            ? html`<button class="secondary" @click=${() => onCommitBuy(true)}>Confirm Buy And End Game</button>`
+            ? html`<button class="secondary" @click=${() => onCommitBuy(true)}>${t('workspace.confirm_buy_end_game')}</button>`
             : html``}
         </div>
         ${state.pendingEndGameRequest
           ? html`
               <p class="muted small">
-                <strong>End game is declared.</strong> Confirm this buy/pass to finish the game.
+                <strong>${t('workspace.end_game_declared')}</strong> ${t('workspace.end_game_finish_hint')}
               </p>
             `
           : html``}
@@ -309,7 +317,10 @@ function renderActionPanel({
                   class="secondary action-choice-btn buy-chain-token"
                   ?disabled=${!canAdd}
                   @click=${() => onAddBuy(chain.id)}
-                  title=${`${chain.name}: ${displayAvailableShares} share(s) available`}
+                  title=${t('workspace.buy_chain_title', {
+                    name: getChainDisplayName(chain.id),
+                    shares: displayAvailableShares,
+                  })}
                 >
                   ${renderChainBadge(chain.id, state.chains, { compact: true })}
                   ${selectedForChain
@@ -319,10 +330,10 @@ function renderActionPanel({
               `;
             })}
         </div>
-        <p class="muted small buy-token-hint">Tap chain tokens to queue shares. Use rail cards for detailed pricing.</p>
+        <p class="muted small buy-token-hint">${t('workspace.buy_token_hint')}</p>
 
         <div class="buy-queue">
-          <p class="action-heading"><strong>Shares To Buy</strong></p>
+          <p class="action-heading"><strong>${t('workspace.shares_to_buy')}</strong></p>
           ${buyQueue.length
             ? html`
                 <div class="action-choice-grid buy-queue-list">
@@ -336,13 +347,13 @@ function renderActionPanel({
                   )}
                 </div>
               `
-            : html`<p class="muted">None</p>`}
+            : html`<p class="muted">${t('common.none')}</p>`}
         </div>
       </section>
     `;
   }
 
-  return html`<section class="action-content"><p>Waiting for action...</p></section>`;
+  return html`<section class="action-content"><p>${t('workspace.waiting_action')}</p></section>`;
 }
 
 export function renderDecisionWorkspace({
@@ -375,9 +386,16 @@ export function renderDecisionWorkspace({
   const tilesSection = html`
     <section class="tiles-box">
       <p class="action-heading">
-        <strong>Your Tiles</strong>
+        <strong>${t('workspace.your_tiles')}</strong>
         ${localPlayer
-          ? html`<span class="muted small">(${playableTiles.size} playable / ${localPlayer.tiles.length} total)</span>`
+          ? html`
+              <span class="muted small">
+                ${t('workspace.tiles_playable_total', {
+                  playable: playableTiles.size,
+                  total: localPlayer.tiles.length,
+                })}
+              </span>
+            `
           : html``}
       </p>
       ${localPlayer
@@ -412,47 +430,47 @@ export function renderDecisionWorkspace({
                     class=${classes.join(' ')}
                   >
                     <span class="tile-chip-id">${formatTileLabel(tileId, excelStyleCoordinates)}</span>
-                    ${showPlayPrompt ? html`<span class="tile-chip-play-prompt">play?</span>` : html``}
+                    ${showPlayPrompt ? html`<span class="tile-chip-play-prompt">${t('board.play_prompt')}</span>` : html``}
                   </button>
                 `;
               })}
             </div>
             <p class="muted small">
               ${canPlaceTileNow
-                ? 'Click a playable hand tile or board target to preview it, then click the same spot again to place it.'
-                : 'Click any hand tile to preview its board location. Placement is enabled during your tile phase.'}
+                ? t('game.board_hint')
+                : t('workspace.preview_hint')}
             </p>
             ${canPlaceTileNow && legal?.canSkipTile
               ? html`
                   <button class="secondary" @click=${() => onSendAction({ type: 'SKIP_TILE' })}>
-                    Skip Tile Placement
+                    ${t('workspace.skip_tile')}
                   </button>
                 `
               : html``}
           `
-        : html`<p>No local hand available.</p>`}
+        : html`<p>${t('workspace.no_local_hand')}</p>`}
     </section>
   `;
 
   return html`
     <article class="decision-workspace">
-      <h3>Player</h3>
+      <h3>${t('common.player')}</h3>
 
       <section class="portfolio-box">
         <p class="portfolio-line">
-          <span>Cash</span>
-          <strong>$${localPlayer?.cash || 0}</strong>
+          <span>${t('common.cash')}</span>
+          <strong>${formatCurrency(localPlayer?.cash || 0)}</strong>
         </p>
         <p class="portfolio-line">
-          <span>Total Shares</span>
+          <span>${t('common.shares')}</span>
           <strong>${shareCount}</strong>
         </p>
         <p class="portfolio-line portfolio-line-stocks">
-          <span>Stocks</span>
+          <span>${t('common.stocks')}</span>
           <strong>
             ${localPlayer
               ? renderStockHoldings(localPlayer.stocks, state.chains)
-              : 'No local player data available.'}
+              : t('common.none')}
           </strong>
         </p>
       </section>
@@ -462,7 +480,7 @@ export function renderDecisionWorkspace({
       ${renderActionPanel({
         state,
         legal,
-        actingPlayerName: actingPlayer?.name || 'another player',
+        actingPlayerName: actingPlayer?.name || t('common.player').toLowerCase(),
         localPlayer,
         buyQueue,
         mergerSell,
@@ -479,10 +497,10 @@ export function renderDecisionWorkspace({
       ${legal?.canEndGame && !state.pendingEndGameRequest
         ? html`
             <section class="action-content">
-              <p class="action-heading"><strong>End Game</strong></p>
-              <p class="muted small">Declare that the game should end after this turn's buy/pass resolution.</p>
+              <p class="action-heading"><strong>${t('workspace.end_game')}</strong></p>
+              <p class="muted small">${t('workspace.end_game_finish_hint')}</p>
               <button class="secondary" @click=${() => onSendAction({ type: 'DECLARE_END_GAME' })}>
-                Declare End Game
+                ${t('workspace.declare_end_game')}
               </button>
             </section>
           `

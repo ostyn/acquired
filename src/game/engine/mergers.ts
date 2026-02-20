@@ -5,7 +5,7 @@
 
 import { PHASES } from '../constants';
 import { minorityBonus, stockPrice } from '../utils';
-import { getChain, getPlayer, orderedFrom } from './helpers';
+import { getChain, getPlayer, orderedFrom, pushLogEvent } from './helpers';
 import { findUnincorporatedCluster, recalculateSizes } from './board';
 import type { GameState } from './types';
 
@@ -41,18 +41,51 @@ export function payoutBonuses(state: GameState, chainId: string): void {
     const split = Math.floor((major + minor) / majority.length / 100) * 100;
     for (const entry of majority) {
       entry.player.cash += split;
-      state.log.push(`${entry.player.name} receives $${split} tied majority/minority for ${chain.name}.`);
+      pushLogEvent(
+        state,
+        'player_received_tied_bonus',
+        {
+          playerId: entry.player.id,
+          playerName: entry.player.name,
+          chainId,
+          chainName: chain.name,
+          amount: split,
+        },
+        `${entry.player.name} receives $${split} tied majority/minority for ${chain.name}.`,
+      );
     }
     return;
   }
 
   majority[0].player.cash += major;
-  state.log.push(`${majority[0].player.name} receives $${major} majority bonus for ${chain.name}.`);
+  pushLogEvent(
+    state,
+    'player_received_majority_bonus',
+    {
+      playerId: majority[0].player.id,
+      playerName: majority[0].player.name,
+      chainId,
+      chainName: chain.name,
+      amount: major,
+    },
+    `${majority[0].player.name} receives $${major} majority bonus for ${chain.name}.`,
+  );
 
   const secondHighest = holdings.find((entry) => entry.shares < highest);
   if (!secondHighest) {
     majority[0].player.cash += minor;
-    state.log.push(`${majority[0].player.name} also receives $${minor} minority bonus for ${chain.name}.`);
+    pushLogEvent(
+      state,
+      'player_received_additional_minority_bonus',
+      {
+        playerId: majority[0].player.id,
+        playerName: majority[0].player.name,
+        chainId,
+        chainName: chain.name,
+        amount: minor,
+      },
+      `${majority[0].player.name} also receives $${minor} minority bonus for ${chain.name}.`,
+    );
     return;
   }
 
@@ -60,7 +93,18 @@ export function payoutBonuses(state: GameState, chainId: string): void {
   const split = Math.floor(minor / minority.length / 100) * 100;
   for (const entry of minority) {
     entry.player.cash += split;
-    state.log.push(`${entry.player.name} receives $${split} minority bonus for ${chain.name}.`);
+    pushLogEvent(
+      state,
+      'player_received_minority_bonus',
+      {
+        playerId: entry.player.id,
+        playerName: entry.player.name,
+        chainId,
+        chainName: chain.name,
+        amount: split,
+      },
+      `${entry.player.name} receives $${split} minority bonus for ${chain.name}.`,
+    );
   }
 }
 

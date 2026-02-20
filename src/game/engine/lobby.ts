@@ -15,6 +15,7 @@ import {
   initialStocks,
   normalizeMaxPlayers,
   normalizeStartingCash,
+  pushLogEvent,
 } from './helpers';
 import { replaceDeadTilesIfNeeded } from './turns';
 import type { ActionResult, BoardState, GameState } from './types';
@@ -55,6 +56,7 @@ export function createLobbyState({ roomId, hostPlayer }: { roomId: string; hostP
     requestGameEndAfterBuy: false,
     settings,
     log: ['Lobby created.'],
+    logEvents: [{ key: 'lobby_created', params: {} }],
     winnerIds: [],
     gameEnded: false,
   };
@@ -88,7 +90,12 @@ export function addPlayerToLobby(
     startTile: null,
     lastBuy: null,
   });
-  state.log.push(`${player.name} joined the lobby.`);
+  pushLogEvent(
+    state,
+    'player_joined_lobby',
+    { playerId: player.id, playerName: player.name },
+    `${player.name} joined the lobby.`,
+  );
   return { ok: true };
 }
 
@@ -150,7 +157,7 @@ export function setLobbySettings(state: GameState, actorId: string, settingsPatc
   for (const player of state.players) {
     player.cash = next.startingCash;
   }
-  state.log.push('Host updated lobby settings.');
+  pushLogEvent(state, 'host_updated_lobby_settings', {}, 'Host updated lobby settings.');
   return { ok: true };
 }
 
@@ -169,7 +176,12 @@ export function removePlayerFromLobby(state: GameState, playerId: string): Actio
   }
 
   const [removed] = state.players.splice(index, 1);
-  state.log.push(`${removed.name} left the lobby.`);
+  pushLogEvent(
+    state,
+    'player_left_lobby',
+    { playerId: removed.id, playerName: removed.name },
+    `${removed.name} left the lobby.`,
+  );
   return { ok: true };
 }
 
@@ -184,7 +196,12 @@ export function markPlayerConnection(state: GameState, playerId: string, connect
   }
 
   player.connected = connected;
-  state.log.push(`${player.name} ${connected ? 'connected' : 'disconnected'}.`);
+  pushLogEvent(
+    state,
+    connected ? 'player_connected' : 'player_disconnected',
+    { playerId: player.id, playerName: player.name },
+    `${player.name} ${connected ? 'connected' : 'disconnected'}.`,
+  );
 }
 
 export function startGame(state: GameState, rng: () => number = Math.random): ActionResult {
@@ -242,7 +259,7 @@ export function startGame(state: GameState, rng: () => number = Math.random): Ac
 
   state.currentPlayerId = state.playerOrder[0];
   state.phase = PHASES.AWAIT_TILE;
-  state.log.push('Game started.');
+  pushLogEvent(state, 'game_started', {}, 'Game started.');
 
   const firstPlayer = state.players.find((player) => player.id === state.currentPlayerId) || null;
   replaceDeadTilesIfNeeded(state, firstPlayer);

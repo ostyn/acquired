@@ -6,7 +6,7 @@
 import { SAFE_CHAIN_SIZE } from '../constants';
 import { stockPrice } from '../utils';
 import { canDeclareGameEnd } from './board';
-import { ensureLobbySettings } from './helpers';
+import { ensureLobbySettings, ensureLogCollections } from './helpers';
 import { getLegalActions } from './legal-actions';
 import type { GameState } from './types';
 
@@ -30,6 +30,7 @@ function getViewerPlayers(state: GameState, viewerId: string): any[] {
 
 export function toPublicState(state: GameState, viewerId: string): any {
   const settings = ensureLobbySettings(state);
+  const { log, logEvents } = ensureLogCollections(state);
   const legalActions = getLegalActions(state, viewerId);
 
   const chains = Object.values(state.hotels).map((hotel) => ({
@@ -70,6 +71,7 @@ export function toPublicState(state: GameState, viewerId: string): any {
     legalActions,
     pending,
     canDeclareGameEnd: canDeclareGameEnd(state),
-    log: state.log.slice(-120),
+    log: log.slice(-120),
+    logEvents: logEvents.slice(-120),
   };
 }

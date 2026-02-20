@@ -6,6 +6,7 @@
 import { html } from 'lit';
 import { HOTELS, PRICE_BRACKETS } from '../../game/constants';
 import { renderChainBadge } from './chain-display';
+import { t } from '../i18n';
 
 export function rangeLabel(min, max) {
   if (max === Number.POSITIVE_INFINITY) {
@@ -33,20 +34,20 @@ const REFERENCE_ROWS = buildReferenceRows();
 export function renderReferenceCard() {
   return html`
     <section class="reference-card">
-      <p><strong>Turn:</strong> Place 1 tile, then buy up to 3 shares (or pass).</p>
-      <p><strong>Mergers:</strong> Sell, trade 2:1, hold, or combine.</p>
-      <p><strong>Bonuses:</strong> Majority 10x price, minority 5x price.</p>
-      <p><strong>Safety:</strong> Chain size 11+ is safe and cannot be removed.</p>
-      <p><strong>End:</strong> Any chain 41+ or all active chains safe.</p>
+      <p><strong>${t('reference.turn')}:</strong> ${t('reference.turn_rule')}</p>
+      <p><strong>${t('reference.mergers')}:</strong> ${t('reference.mergers_rule')}</p>
+      <p><strong>${t('reference.bonuses')}:</strong> ${t('reference.bonuses_rule')}</p>
+      <p><strong>${t('reference.safety')}:</strong> ${t('reference.safety_rule')}</p>
+      <p><strong>${t('reference.end')}:</strong> ${t('reference.end_rule')}</p>
 
-      <h4>Stock Price By Chain Size</h4>
+      <h4>${t('reference.stock_price')}</h4>
       <div class="table-wrap">
         <table class="reference-table">
           <thead>
             <tr>
-              <th>Chain Size</th>
+              <th>${t('reference.chain_size')}</th>
               <th>
-                Cheap
+                ${t('reference.cheap')}
                 <span class="reference-chain-row">
                   ${renderChainBadge('tower', HOTELS, { compact: true })}
                   ${renderChainBadge('luxor', HOTELS, { compact: true })}
@@ -54,14 +55,14 @@ export function renderReferenceCard() {
                 </span>
               </th>
               <th>
-                Medium
+                ${t('reference.medium')}
                 <span class="reference-chain-row">
                   ${renderChainBadge('festival', HOTELS, { compact: true })}
                   ${renderChainBadge('worldwide', HOTELS, { compact: true })}
                 </span>
               </th>
               <th>
-                Expensive
+                ${t('reference.expensive')}
                 <span class="reference-chain-row">
                   ${renderChainBadge('imperial', HOTELS, { compact: true })}
                   ${renderChainBadge('continental', HOTELS, { compact: true })}

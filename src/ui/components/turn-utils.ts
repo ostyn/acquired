@@ -4,6 +4,7 @@
  */
 
 import { PHASES } from '../../game/constants';
+import { phaseLabelText, t } from '../i18n';
 
 export function actorForPhase(state) {
   if (!state) {
@@ -22,26 +23,7 @@ export function actorForPhase(state) {
 }
 
 export function phaseLabel(phase) {
-  switch (phase) {
-    case PHASES.AWAIT_TILE:
-      return 'Place Tile';
-    case PHASES.AWAIT_FOUND_CHAIN:
-      return 'Choose New Chain';
-    case PHASES.AWAIT_MERGER_SURVIVOR:
-      return 'Choose Surviving Chain';
-    case PHASES.AWAIT_MERGER_DEFUNCT_ORDER:
-      return 'Choose Defunct Chain Order';
-    case PHASES.AWAIT_MERGER_DISPOSITION:
-      return 'Resolve Merger Stock';
-    case PHASES.AWAIT_BUY:
-      return 'Buy Stock';
-    case PHASES.GAME_OVER:
-      return 'Game Over';
-    case PHASES.LOBBY:
-      return 'Lobby';
-    default:
-      return phase;
-  }
+  return phaseLabelText(phase);
 }
 
 export function totalStockCount(stocks) {
@@ -59,35 +41,35 @@ export function totalStockCount(stocks) {
 
 export function turnInstruction(legal, actingPlayerName) {
   if (!legal?.allowed) {
-    return 'Waiting for game actions.';
+    return t('turn.waiting_actions');
   }
 
   switch (legal.phase) {
     case PHASES.AWAIT_TILE:
       return legal.isTurn
-        ? 'Play one tile. Then proceed to stock buying.'
-        : `Waiting for ${actingPlayerName} to place a tile.`;
+        ? t('turn.play_tile')
+        : t('turn.waiting_place_tile', { name: actingPlayerName });
     case PHASES.AWAIT_FOUND_CHAIN:
       return legal.foundingChoices?.length
-        ? 'Select which chain to found.'
-        : `Waiting for ${actingPlayerName} to choose a new chain.`;
+        ? t('turn.select_chain')
+        : t('turn.waiting_chain', { name: actingPlayerName });
     case PHASES.AWAIT_MERGER_SURVIVOR:
       return legal.survivorChoices?.length
-        ? 'Choose which chain survives this merger.'
-        : `Waiting for ${actingPlayerName} to choose the surviving chain.`;
+        ? t('turn.choose_survivor')
+        : t('turn.waiting_survivor', { name: actingPlayerName });
     case PHASES.AWAIT_MERGER_DEFUNCT_ORDER:
       return legal.defunctOrderChoices?.length
-        ? 'Choose which tied defunct chain resolves first.'
-        : `Waiting for ${actingPlayerName} to choose defunct order.`;
+        ? t('turn.choose_defunct')
+        : t('turn.waiting_defunct', { name: actingPlayerName });
     case PHASES.AWAIT_MERGER_DISPOSITION:
       return legal.mergerDisposition
-        ? 'Resolve merger stock: trade, sell, hold, or combine.'
-        : `Waiting for ${actingPlayerName} to resolve merger stock.`;
+        ? t('turn.resolve_merger')
+        : t('turn.waiting_merger', { name: actingPlayerName });
     case PHASES.AWAIT_BUY:
       return legal.isTurn
-        ? 'Buy up to 3 shares or pass.'
-        : `Waiting for ${actingPlayerName} to buy stock.`;
+        ? t('turn.buy_or_pass')
+        : t('turn.waiting_buy', { name: actingPlayerName });
     default:
-      return 'Waiting for game actions.';
+      return t('turn.waiting_actions');
   }
 }

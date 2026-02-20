@@ -17,8 +17,10 @@ import {
   setLobbySettings,
   startGame,
   toPublicState,
+  pushLogEvent,
 } from "../game/engine";
 import { PHASES } from "../game/constants";
+import { createToken, localizeKnownError, resolveToken, subscribeToLocaleChanges } from "../ui/i18n";
 
 const HOST_CHECKPOINT_KEY = "acquire.host.checkpoint.v1";
 const ROOM_IDENTITIES_KEY = "acquire.room.identities.v1";
@@ -194,6 +196,15 @@ function sanitizeStateForViewer(state, viewerId) {
   const players = Array.isArray(state.players) ? state.players : [];
   return {
     ...state,
+    log: Array.isArray(state.log) ? [...state.log] : [],
+    logEvents: Array.isArray(state.logEvents)
+      ? state.logEvents.map((event) => ({
+        ...event,
+        params: {
+          ...(event?.params || {}),
+        },
+      }))
+      : [],
     players: players.map((player) => ({
       ...player,
       tiles:
@@ -235,7 +246,11 @@ class AppStore {
 
   connectionStatus = "idle";
 
-  statusMessage = "Not connected";
+  statusMessageToken = createToken("status.not_connected");
+
+  statusMessage = resolveToken(this.statusMessageToken, "Not connected");
+
+  errorMessageToken = null;
 
   errorMessage = "";
 
@@ -251,9 +266,14 @@ class AppStore {
 
   lastPersistedDebugLogSignature = "";
 
+  localeUnsubscribe: (() => void) | null = null;
+
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
     this.refreshHostCheckpointMeta();
+    this.localeUnsubscribe = subscribeToLocaleChanges(() => {
+      this.refreshLocalizedMessages();
+    });
   }
 
   clearGuestStateTimeout() {
@@ -284,15 +304,19 @@ class AppStore {
       const channelOpen = Boolean(this.guestConnection && this.guestConnection.open);
 
       if (channelOpen) {
-        this.statusMessage = `Connected to ${this.roomId}, but waiting for game state timed out`;
-        this.setError(
-          "Connected to signaling but no room state arrived from host. This usually means the peer data channel failed (often due missing TURN relay).",
+        this.setStatusToken(
+          "status.connected_waiting_state_timeout",
+          { roomId: this.roomId },
+          `Connected to ${this.roomId}, but waiting for game state timed out`,
         );
+        this.setErrorToken("error.connected_no_state");
       } else {
-        this.statusMessage = `Timed out joining ${this.roomId}`;
-        this.setError(
-          "Could not establish a peer data channel to host. Signaling can succeed while P2P fails; a TURN relay is often required.",
+        this.setStatusToken(
+          "status.timed_out_join",
+          { roomId: this.roomId },
+          `Timed out joining ${this.roomId}`,
         );
+        this.setErrorToken("error.channel_failed");
       }
     }, GUEST_INITIAL_STATE_TIMEOUT_MS);
   }
@@ -437,14 +461,18 @@ class AppStore {
     return checkpoint.roomId.trim().toUpperCase() === normalizedRoomId;
   }
 
-  attachHostPeerLifecycleHandlers(openMessage) {
+  attachHostPeerLifecycleHandlers(openStatusKey) {
     if (!this.peer) {
       return;
     }
 
     this.peer.on("open", () => {
       this.connectionStatus = "connected";
-      this.statusMessage = openMessage;
+      this.setStatusToken(
+        openStatusKey,
+        { roomId: this.roomId },
+        this.roomId ? `Room ${this.roomId}` : "Connected",
+      );
       this.broadcastState();
       this.runBotsUntilHumanNeeded();
     });
@@ -460,7 +488,11 @@ class AppStore {
 
     this.peer.on("disconnected", () => {
       this.connectionStatus = "disconnected";
-      this.statusMessage = "Disconnected from signaling service";
+      this.setStatusToken(
+        "status.disconnected_signaling",
+        {},
+        "Disconnected from signaling service",
+      );
     });
   }
 
@@ -540,11 +572,36 @@ class AppStore {
     }
   }
 
+  refreshLocalizedMessages() {
+    this.statusMessage = resolveToken(this.statusMessageToken, this.statusMessage);
+    if (this.errorMessageToken) {
+      this.errorMessage = resolveToken(this.errorMessageToken, this.errorMessage);
+    }
+  }
+
+  setStatusToken(key, params = {}, fallback = "") {
+    this.statusMessageToken = createToken(key, params);
+    this.statusMessage = resolveToken(this.statusMessageToken, fallback);
+  }
+
+  setErrorToken(key, params = {}, fallback = "") {
+    this.errorMessageToken = createToken(key, params);
+    this.errorMessage = resolveToken(this.errorMessageToken, fallback);
+  }
+
   setError(message) {
-    this.errorMessage = message;
+    const token = localizeKnownError(message);
+    if (token) {
+      this.errorMessageToken = token;
+      this.errorMessage = resolveToken(token, "");
+      return;
+    }
+    this.errorMessageToken = null;
+    this.errorMessage = String(message || "");
   }
 
   clearError() {
+    this.errorMessageToken = null;
     this.errorMessage = "";
   }
 
@@ -590,7 +647,7 @@ class AppStore {
     const iceConfig = normalizeIceConfig(iceServersJson);
     if (!iceConfig.ok) {
       this.connectionStatus = "error";
-      this.statusMessage = "Invalid ICE/TURN configuration";
+      this.setStatusToken("status.invalid_ice", {}, "Invalid ICE/TURN configuration");
       this.setError(iceConfig.error);
       return false;
     }
@@ -599,7 +656,7 @@ class AppStore {
 
     this.roomId = generateRoomCode();
     this.connectionStatus = "connecting";
-    this.statusMessage = "Creating room...";
+    this.setStatusToken("status.creating_room", {}, "Creating room...");
 
     this.hostState = createLobbyState({
       roomId: this.roomId,
@@ -622,11 +679,11 @@ class AppStore {
         `Could not initialize host peer: ${error?.message || String(error)}`,
       );
       this.connectionStatus = "error";
-      this.statusMessage = "Failed to create room";
+      this.setStatusToken("status.failed_create_room", {}, "Failed to create room");
       return false;
     }
 
-    this.attachHostPeerLifecycleHandlers(`Room ${this.roomId} is open`);
+    this.attachHostPeerLifecycleHandlers("status.room_open");
 
     return true;
   }
@@ -641,8 +698,8 @@ class AppStore {
     const checkpoint = this.readHostCheckpoint();
     if (!checkpoint) {
       this.connectionStatus = "error";
-      this.statusMessage = "No saved host checkpoint found";
-      this.setError("No saved host checkpoint found.");
+      this.setStatusToken("status.no_checkpoint", {}, "No saved host checkpoint found");
+      this.setErrorToken("error.no_checkpoint");
       return false;
     }
 
@@ -664,7 +721,7 @@ class AppStore {
     );
     if (!iceConfig.ok) {
       this.connectionStatus = "error";
-      this.statusMessage = "Invalid ICE/TURN configuration";
+      this.setStatusToken("status.invalid_ice", {}, "Invalid ICE/TURN configuration");
       this.setError(iceConfig.error);
       return false;
     }
@@ -672,13 +729,13 @@ class AppStore {
     this.iceServers = iceConfig.iceServers;
 
     this.connectionStatus = "connecting";
-    this.statusMessage = `Resuming ${this.roomId}...`;
+    this.setStatusToken("status.resuming_room", { roomId: this.roomId }, `Resuming ${this.roomId}...`);
     this.hostState = checkpoint.hostState;
 
     if (!this.hostState || typeof this.hostState !== "object") {
       this.connectionStatus = "error";
-      this.statusMessage = "Invalid checkpoint data";
-      this.setError("Checkpoint is invalid.");
+      this.setStatusToken("status.invalid_checkpoint", {}, "Invalid checkpoint data");
+      this.setErrorToken("error.invalid_checkpoint");
       return false;
     }
 
@@ -703,11 +760,11 @@ class AppStore {
         `Could not initialize resumed host peer: ${error?.message || String(error)}`,
       );
       this.connectionStatus = "error";
-      this.statusMessage = "Failed to resume room";
+      this.setStatusToken("status.failed_resume", {}, "Failed to resume room");
       return false;
     }
 
-    this.attachHostPeerLifecycleHandlers(`Room ${this.roomId} resumed`);
+    this.attachHostPeerLifecycleHandlers("status.room_resumed");
     this.saveHostCheckpoint("resume");
     return true;
   }
@@ -730,7 +787,7 @@ class AppStore {
     const iceConfig = normalizeIceConfig(iceServersJson);
     if (!iceConfig.ok) {
       this.connectionStatus = "error";
-      this.statusMessage = "Invalid ICE/TURN configuration";
+      this.setStatusToken("status.invalid_ice", {}, "Invalid ICE/TURN configuration");
       this.setError(iceConfig.error);
       return false;
     }
@@ -738,7 +795,7 @@ class AppStore {
     this.iceServers = iceConfig.iceServers;
 
     this.connectionStatus = "connecting";
-    this.statusMessage = `Joining ${this.roomId}...`;
+    this.setStatusToken("status.joining_room", { roomId: this.roomId }, `Joining ${this.roomId}...`);
     this.hostState = null;
     this.viewState = null;
 
@@ -746,7 +803,7 @@ class AppStore {
       this.peer = this.createPeer(undefined);
     } catch (error) {
       this.connectionStatus = "error";
-      this.statusMessage = "Failed to create guest peer";
+      this.setStatusToken("status.failed_create_guest", {}, "Failed to create guest peer");
       this.setError(
         `Could not initialize guest peer: ${error?.message || String(error)}`,
       );
@@ -764,7 +821,11 @@ class AppStore {
 
     this.peer.on("disconnected", () => {
       this.connectionStatus = "disconnected";
-      this.statusMessage = "Disconnected from signaling service";
+      this.setStatusToken(
+        "status.disconnected_signaling",
+        {},
+        "Disconnected from signaling service",
+      );
     });
 
     this.scheduleGuestStateTimeout();
@@ -779,7 +840,11 @@ class AppStore {
 
     this.guestConnection.on("open", () => {
       this.connectionStatus = "connected";
-      this.statusMessage = `Connected to room ${this.roomId}. Waiting for host state...`;
+      this.setStatusToken(
+        "status.connected_waiting_host",
+        { roomId: this.roomId },
+        `Connected to room ${this.roomId}. Waiting for host state...`,
+      );
       this.guestConnection.send({
         type: "intro",
         playerId: this.localPlayerId,
@@ -796,7 +861,7 @@ class AppStore {
 
     this.guestConnection.on("close", () => {
       this.connectionStatus = "disconnected";
-      this.statusMessage = "Connection to host closed";
+      this.setStatusToken("status.connection_closed", {}, "Connection to host closed");
       this.clearGuestStateTimeout();
     });
 
@@ -946,7 +1011,16 @@ class AppStore {
 
       const previousName = player.name;
       player.name = nextName;
-      this.hostState.log.push(`${previousName} is now known as ${nextName}.`);
+      pushLogEvent(
+        this.hostState,
+        "player_renamed",
+        {
+          playerId,
+          previousName,
+          nextName,
+        },
+        `${previousName} is now known as ${nextName}.`,
+      );
       this.saveHostCheckpoint("rename_player");
       this.broadcastState();
     }
@@ -963,19 +1037,35 @@ class AppStore {
         this.localPlayerId,
       );
       this.persistDebugLog(this.viewState);
-      this.statusMessage = `Room ${message.state.roomId}`;
+      this.setStatusToken(
+        "status.room_title",
+        { roomId: message.state.roomId },
+        `Room ${message.state.roomId}`,
+      );
       this.clearGuestStateTimeout();
       return;
     }
 
     if (message.type === "error") {
-      this.setError(message.message || "Host rejected request");
+      if (typeof message.errorKey === "string" && message.errorKey) {
+        this.setErrorToken(
+          message.errorKey,
+          typeof message.errorParams === "object" && message.errorParams ? message.errorParams : {},
+          message.message || "",
+        );
+      } else {
+        this.setError(message.message || "Host rejected request");
+      }
       this.clearGuestStateTimeout();
       return;
     }
 
     if (message.type === "intro_ack") {
-      this.statusMessage = `Joined room ${message.roomId}. Syncing state...`;
+      this.setStatusToken(
+        "status.joined_syncing",
+        { roomId: message.roomId },
+        `Joined room ${message.roomId}. Syncing state...`,
+      );
       this.scheduleGuestStateTimeout();
     }
   }
@@ -1028,10 +1118,16 @@ class AppStore {
         sourceConnection.send({
           type: "error",
           message: result.error,
+          errorKey: result.errorKey,
+          errorParams: result.errorParams,
         });
       }
       if (actorId === this.localPlayerId) {
-        this.setError(result.error);
+        if (result.errorKey) {
+          this.setErrorToken(result.errorKey, result.errorParams || {}, result.error || "");
+        } else {
+          this.setError(result.error);
+        }
       }
       return;
     }
@@ -1088,7 +1184,14 @@ class AppStore {
 
       const result = applyAction(this.hostState, actingBot.id, botAction);
       if (!result.ok) {
-        this.hostState.log.push(
+        pushLogEvent(
+          this.hostState,
+          "bot_action_failed",
+          {
+            playerId: actingBot.id,
+            playerName: actingBot.name,
+            error: result.error || "Unknown action failure",
+          },
           `Bot action failed for ${actingBot.name}: ${result.error}`,
         );
         this.saveHostCheckpoint("bot_action_error");
@@ -1175,7 +1278,16 @@ class AppStore {
 
       const previousName = player.name;
       player.name = nextName;
-      this.hostState.log.push(`${previousName} is now known as ${nextName}.`);
+      pushLogEvent(
+        this.hostState,
+        "player_renamed",
+        {
+          playerId,
+          previousName,
+          nextName,
+        },
+        `${previousName} is now known as ${nextName}.`,
+      );
 
       if (player.id === this.localPlayerId) {
         this.localName = nextName;
@@ -1284,8 +1396,8 @@ class AppStore {
     this.hostState = null;
     this.viewState = null;
     this.connectionStatus = "idle";
-    this.statusMessage = "Not connected";
-    this.errorMessage = "";
+    this.setStatusToken("status.not_connected", {}, "Not connected");
+    this.clearError();
   }
 }
 

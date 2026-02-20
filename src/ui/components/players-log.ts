@@ -5,6 +5,7 @@
 
 import { html } from 'lit';
 import { renderChainNamesInText, renderLastBuy, renderStockHoldings } from './chain-display';
+import { formatCurrency, t } from '../i18n';
 
 export function renderPlayersPanel(state, orderedPlayers, localPlayerId) {
   return html`
@@ -13,12 +14,12 @@ export function renderPlayersPanel(state, orderedPlayers, localPlayerId) {
         <table class="players-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Cash</th>
-              <th>Tiles</th>
-              <th>Stocks</th>
-              <th>Last Buy</th>
-              <th>Status</th>
+              <th>${t('lobby.table_name')}</th>
+              <th>${t('common.cash')}</th>
+              <th>${t('common.tiles')}</th>
+              <th>${t('common.stocks')}</th>
+              <th>${t('players.last_buy')}</th>
+              <th>${t('lobby.table_status')}</th>
             </tr>
           </thead>
           <tbody>
@@ -26,11 +27,11 @@ export function renderPlayersPanel(state, orderedPlayers, localPlayerId) {
               (player) => html`
                 <tr>
                   <td>${player.name}${player.id === state.currentPlayerId ? ' *' : ''}</td>
-                  <td>$${player.cash}</td>
+                  <td>${formatCurrency(player.cash)}</td>
                   <td>${player.tileCount}</td>
-                  <td>${player.id === localPlayerId ? renderStockHoldings(player.stocks, state.chains) : 'Hidden'}</td>
+                  <td>${player.id === localPlayerId ? renderStockHoldings(player.stocks, state.chains) : t('lobby.hidden')}</td>
                   <td>${renderLastBuy(player.lastBuy, state.chains)}</td>
-                  <td>${player.connected ? 'Connected' : 'Offline'}</td>
+                  <td>${player.connected ? t('common.connected') : t('common.offline')}</td>
                 </tr>
               `,
             )}

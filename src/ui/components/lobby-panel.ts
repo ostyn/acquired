@@ -11,6 +11,7 @@ import {
   MIN_STARTING_CASH,
   STARTING_CASH_STEP,
 } from '../../game/constants';
+import { playerCountLabel, t } from '../i18n';
 import './connection-status';
 
 export function normalizeLobbySettings(
@@ -38,9 +39,7 @@ export function normalizeLobbySettings(
 function renderTwoPlayerRulesNote() {
   return html`
     <p class="muted small lobby-rules-note">
-      <strong>2-player special rule:</strong> During mergers, the Stock Market is treated as an extra shareholder
-      for majority/minority bonus calculation only. Disposal choices do not change: players may still hold, sell,
-      or trade defunct shares (2-for-1) as usual.
+      <strong>${t('lobby.two_player_rule_title')}</strong> ${t('lobby.two_player_rule')}
     </p>
   `;
 }
@@ -71,13 +70,13 @@ export function renderLobbyPanel({
       <article class="lobby-roster-panel">
         <div class="lobby-card-header">
           <div class="lobby-card-title-group">
-            <h3>Players</h3>
-            <p class="lobby-player-count">${state.players.length} ${state.players.length === 1 ? 'player' : 'players'}</p>
+            <h3>${t('lobby.players')}</h3>
+            <p class="lobby-player-count">${playerCountLabel(state.players.length)}</p>
           </div>
           ${isHost
             ? html`
                 <div class="lobby-card-actions">
-                  <button class="secondary lobby-add-bot-btn" @click=${() => onAddBot()}>Add Bot</button>
+                  <button class="secondary lobby-add-bot-btn" @click=${() => onAddBot()}>${t('lobby.add_bot')}</button>
                 </div>
               `
             : html``}
@@ -87,9 +86,9 @@ export function renderLobbyPanel({
           <table class="lobby-roster-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Status</th>
+                <th>${t('lobby.table_name')}</th>
+                <th>${t('lobby.table_type')}</th>
+                <th>${t('lobby.table_status')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -98,7 +97,7 @@ export function renderLobbyPanel({
                 const canRename = player.id === localPlayerId || (isHost && player.isBot);
                 const isEditing = Boolean(editingPlayerIds?.[player.id]);
                 const isHostBot = Boolean(isHost && player.isBot);
-                const editLabel = isHostBot ? 'Rename' : 'Edit';
+                const editLabel = isHostBot ? t('lobby.rename') : t('lobby.edit');
                 const draftName = nameDrafts?.[player.id] ?? player.name;
                 return html`
                   <tr>
@@ -124,7 +123,7 @@ export function renderLobbyPanel({
                           `
                         : player.name}
                     </td>
-                    <td>${player.isBot ? 'Bot' : 'Human'}</td>
+                    <td>${player.isBot ? t('lobby.type_bot') : t('lobby.type_human')}</td>
                     <td>
                       <connection-status
                         status=${player.connected ? 'connected' : 'disconnected'}
@@ -140,14 +139,14 @@ export function renderLobbyPanel({
                           : html``}
                         ${isEditing
                           ? html`
-                              <button class="secondary" @click=${() => onSaveRename(player.id, player.name)}>Save</button>
-                              <button class="secondary outline" @click=${() => onCancelRename(player.id)}>Cancel</button>
+                              <button class="secondary" @click=${() => onSaveRename(player.id, player.name)}>${t('lobby.save')}</button>
+                              <button class="secondary outline" @click=${() => onCancelRename(player.id)}>${t('lobby.cancel')}</button>
                             `
                           : html``}
                         ${isHostBot
                           ? html`
                               <button class="secondary outline lobby-remove-bot-btn" @click=${() => onRemoveBot(player.id)}>
-                                Remove
+                                ${t('lobby.remove')}
                               </button>
                             `
                           : html``}
@@ -159,16 +158,16 @@ export function renderLobbyPanel({
             </tbody>
           </table>
         </div>
-        <p class="muted small">Use Edit to rename yourself. Host can rename or remove bots.</p>
+        <p class="muted small">${t('lobby.rename_help')}</p>
       </article>
 
       <article class="lobby-settings-panel">
-        <h4>Game Settings</h4>
+        <h4>${t('lobby.settings')}</h4>
         ${isHost
           ? html`
               <div class="lobby-settings-grid">
                 <label>
-                  Max Players
+                  ${t('lobby.max_players')}
                   <input
                     type="number"
                     min=${String(MIN_PLAYER_COUNT)}
@@ -182,7 +181,7 @@ export function renderLobbyPanel({
                   />
                 </label>
                 <label>
-                  Starting Money
+                  ${t('lobby.starting_money')}
                   <input
                     type="number"
                     min=${String(MIN_STARTING_CASH)}
@@ -204,7 +203,7 @@ export function renderLobbyPanel({
                         allowDeadTilePlacementAsUnincorporated: event.target.checked,
                       })}
                   />
-                  Allow dead tiles to be played as unincorporated
+                  ${t('lobby.allow_dead_tiles')}
                 </label>
                 <label class="lobby-toggle-label">
                   <input
@@ -215,7 +214,7 @@ export function renderLobbyPanel({
                         excelStyleCoordinates: event.target.checked,
                       })}
                   />
-                  Use Excel-style coordinates (A1 across, numbers down)
+                  ${t('lobby.excel_coords')}
                 </label>
                 <label class="lobby-toggle-label">
                   <input
@@ -226,29 +225,28 @@ export function renderLobbyPanel({
                         showPlayerCashOnTurnRail: event.target.checked,
                       })}
                   />
-                  Show player cash on turn rail chips
+                  ${t('lobby.show_cash')}
                 </label>
               </div>
               <p class="muted small">
-                When enabled, tiles that would create an eighth chain are still played but do not found a new
-                chain.
+                ${t('lobby.dead_tiles_help')}
               </p>
               ${showTwoPlayerRulesNote ? renderTwoPlayerRulesNote() : html``}
             `
           : html`
-              <p><strong>Max Players:</strong> ${settings.maxPlayers}</p>
-              <p><strong>Starting Money:</strong> $${settings.startingCash}</p>
+              <p><strong>${t('lobby.max_players')}:</strong> ${settings.maxPlayers}</p>
+              <p><strong>${t('lobby.starting_money')}:</strong> $${settings.startingCash}</p>
               <p>
-                <strong>Dead Tiles:</strong>
-                ${settings.deadTilesAsUnincorporated ? 'Played as unincorporated' : 'Temporarily unplayable'}
+                <strong>${t('lobby.dead_tiles_label')}:</strong>
+                ${settings.deadTilesAsUnincorporated ? t('lobby.dead_tiles_played') : t('lobby.dead_tiles_temp')}
               </p>
               <p>
-                <strong>Coordinates:</strong>
-                ${settings.excelStyleCoordinates ? 'Excel style (A1 across)' : 'Classic style'}
+                <strong>${t('lobby.coords_label')}:</strong>
+                ${settings.excelStyleCoordinates ? t('lobby.coords_excel') : t('lobby.coords_classic')}
               </p>
               <p>
-                <strong>Turn Rail Cash:</strong>
-                ${settings.showPlayerCashOnTurnRail ? 'Shown' : 'Hidden'}
+                <strong>${t('lobby.turn_rail_cash_label')}:</strong>
+                ${settings.showPlayerCashOnTurnRail ? t('lobby.shown') : t('lobby.hidden')}
               </p>
               ${showTwoPlayerRulesNote ? renderTwoPlayerRulesNote() : html``}
             `}

@@ -12,7 +12,8 @@ import {
   STARTING_CASH,
   STARTING_CASH_STEP,
 } from '../constants';
-import type { GameState, LobbySettings, PlayerState, Stocks } from './types';
+import { EN_MESSAGES } from '../../locales/en';
+import type { ActionResult, GameLogEvent, GameLogKey, GameLogParams, GameState, LobbySettings, PlayerState, Stocks } from './types';
 import type { HotelBankEntry } from '../utils';
 
 export function initialStocks(): Stocks {
@@ -144,4 +145,61 @@ export function drawTiles(state: GameState, player: PlayerState, amount: number)
 
     player.tiles.push(tile);
   }
+}
+
+export function ensureLogCollections(state: GameState): { log: string[]; logEvents: GameLogEvent[] } {
+  if (!Array.isArray(state.log)) {
+    state.log = [];
+  }
+
+  if (!Array.isArray((state as GameState).logEvents)) {
+    (state as GameState).logEvents = [];
+  }
+
+  return {
+    log: state.log,
+    logEvents: (state as GameState).logEvents,
+  };
+}
+
+export function pushLogEvent(
+  state: GameState,
+  key: GameLogKey,
+  params: GameLogParams,
+  legacyText?: string,
+): void {
+  const collections = ensureLogCollections(state);
+  const defaultLegacyText = interpolateMessage(
+    EN_MESSAGES[`log.${key}`] || String(params.message || key),
+    params,
+  );
+  collections.logEvents.push({
+    key,
+    params: { ...params },
+  });
+  collections.log.push(legacyText || defaultLegacyText);
+}
+
+export function pushLegacyLog(state: GameState, message: string): void {
+  pushLogEvent(state, 'legacy', { message }, message);
+}
+
+function interpolateMessage(template: string, params: GameLogParams = {}): string {
+  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, key) => {
+    const value = params[key];
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value);
+  });
+}
+
+export function errorResult(errorKey: string, params: GameLogParams = {}, fallback = errorKey): ActionResult {
+  const template = EN_MESSAGES[errorKey] || fallback;
+  return {
+    ok: false,
+    error: interpolateMessage(template, params),
+    errorKey,
+    errorParams: { ...params },
+  };
 }

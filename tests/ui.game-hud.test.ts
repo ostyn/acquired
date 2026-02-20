@@ -85,4 +85,29 @@ describe('game hud helpers', () => {
       ),
     ).toEqual(['Host updated lobby settings.', 'Alex joined the lobby.']);
   });
+
+  it('prefers structured log events and slices entries after local turn end marker', () => {
+    expect(
+      getTurnRailLogEntries(
+        {
+          players: [
+            { id: 'p1', name: 'Alex' },
+            { id: 'p2', name: 'Blake' },
+          ],
+          logEvents: [
+            { key: 'lobby_created', params: {} },
+            { key: 'player_bought_stocks', params: { playerId: 'p1', playerName: 'Alex', chainIds: 'tower|tower' } },
+            { key: 'player_placed_unincorporated', params: { playerId: 'p2', playerName: 'Blake', tileId: 'C3' } },
+            { key: 'player_passed_stock_buying', params: { playerId: 'p2', playerName: 'Blake' } },
+            { key: 'player_must_found_chain', params: { playerId: 'p1', playerName: 'Alex' } },
+          ],
+        },
+        'p1',
+      ),
+    ).toEqual([
+      'Alex must found a new chain.',
+      'Blake passes stock buying.',
+      'Blake places C3 as unincorporated.',
+    ]);
+  });
 });

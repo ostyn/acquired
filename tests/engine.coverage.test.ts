@@ -316,11 +316,20 @@ describe('acquire engine extra coverage', () => {
   it('publishes chronological log history capped to the latest 120 entries', () => {
     const state = createLobby();
     state.log = Array.from({ length: 150 }, (_, index) => `Log ${index + 1}`);
+    state.logEvents = Array.from({ length: 150 }, (_, index) => ({
+      key: 'legacy',
+      params: { message: `Log ${index + 1}` },
+    }));
 
     const publicState = toPublicState(state, 'p1');
     expect(publicState.log).toHaveLength(120);
     expect(publicState.log[0]).toBe('Log 31');
     expect(publicState.log[119]).toBe('Log 150');
+    expect(publicState.logEvents).toHaveLength(120);
+    expect(publicState.logEvents[0]).toEqual({
+      key: 'legacy',
+      params: { message: 'Log 31' },
+    });
   });
 
   it('allows eighth-chain tiles to be played as unincorporated when configured', () => {

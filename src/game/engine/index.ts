@@ -7,6 +7,7 @@ export { applyAction, getExpectedActorId } from './actions';
 export { chooseRandomBotAction } from './bots';
 export { isTilePlayable } from './board';
 export { getLegalActions } from './legal-actions';
+export { pushLegacyLog, pushLogEvent } from './helpers';
 export {
   addPlayerToLobby,
   createLobbyState,
@@ -20,6 +21,9 @@ export { toPublicState } from './public-state';
 export type {
   ActionResult,
   BoardState,
+  GameLogEvent,
+  GameLogKey,
+  GameLogParams,
   GameState,
   HotelsState,
   LegalActions,

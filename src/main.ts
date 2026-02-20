@@ -10,13 +10,18 @@ import './ui/lobby-page';
 import './ui/room-page';
 import { initializeThemeMode } from './ui/theme';
 import { appBasePath } from './ui/routes';
+import { initializeLocale } from './ui/i18n';
 
-initializeThemeMode();
+async function bootstrap() {
+  await initializeLocale();
+  initializeThemeMode();
 
-const outlet = document.querySelector('#outlet');
-const router = new Router(outlet, { baseUrl: appBasePath() });
+  const outlet = document.querySelector('#outlet');
+  const router = new Router(outlet, { baseUrl: appBasePath() });
+  router.setRoutes([
+    { path: '/', component: 'lobby-page' },
+    { path: '/room/:roomId', component: 'room-page' },
+  ]);
+}
 
-router.setRoutes([
-  { path: '/', component: 'lobby-page' },
-  { path: '/room/:roomId', component: 'room-page' },
-]);
+void bootstrap();

@@ -6,6 +6,7 @@
 import { html } from 'lit';
 import { MIN_PLAYER_COUNT } from '../../game/constants';
 import { roomPath } from '../routes';
+import { connectionStatusLabel, t } from '../i18n';
 import './connection-status';
 
 type LobbyStartControlState = {
@@ -45,7 +46,7 @@ function copyRoomUrl(roomId: string) {
   }
 
   if (typeof window.prompt === 'function') {
-    window.prompt('Copy room link:', roomUrl);
+    window.prompt(t('roomhub.copy_prompt'), roomUrl);
   }
 }
 
@@ -59,26 +60,26 @@ export function getConnectionStatusMeta(
     case 'connected':
       return {
         icon: '🟢',
-        label: 'Connected',
+        label: connectionStatusLabel(connectionStatus),
         detail: '',
       };
     case 'connecting':
       return {
         icon: '🟡',
-        label: 'Connecting',
+        label: connectionStatusLabel(connectionStatus),
         detail,
       };
     case 'disconnected':
       return {
         icon: '🔴',
-        label: 'Disconnected',
+        label: connectionStatusLabel(connectionStatus),
         detail,
       };
     case 'idle':
     default:
       return {
         icon: '⚪',
-        label: 'Idle',
+        label: connectionStatusLabel(connectionStatus),
         detail,
       };
   }
@@ -93,7 +94,7 @@ export function getLobbyStartControlState({
     return {
       showButton: false,
       disabled: true,
-      helper: 'Waiting for host to start the game.',
+      helper: t('roomhub.waiting_host_start'),
     };
   }
 
@@ -101,7 +102,7 @@ export function getLobbyStartControlState({
     return {
       showButton: true,
       disabled: true,
-      helper: `Need at least ${MIN_PLAYER_COUNT} players to start.`,
+      helper: t('roomhub.need_players_start', { count: MIN_PLAYER_COUNT }),
     };
   }
 
@@ -109,7 +110,7 @@ export function getLobbyStartControlState({
     return {
       showButton: true,
       disabled: true,
-      helper: `Lobby exceeds max players (${maxPlayers}).`,
+      helper: t('roomhub.exceeds_max_players', { count: maxPlayers }),
     };
   }
 
@@ -144,29 +145,29 @@ export function renderRoomHub({
   return html`
     <article class="room-hub">
       <div class="room-hub-main">
-        <p class="room-app-title">Acquire</p>
+        <p class="room-app-title">${t('app.acquire')}</p>
         <h2>
-          Room
+          ${t('common.room')}
           <span class="room-code">
             ${state.roomId}
             <button
               class="secondary room-copy-link"
-              title="Copy room URL"
-              aria-label="Copy room URL"
+              title=${t('roomhub.copy_url')}
+              aria-label=${t('roomhub.copy_url')}
               @click=${() => copyRoomUrl(state.roomId)}
             >
               🔗
             </button>
           </span>
         </h2>
-        <p><strong>Role:</strong> ${isHost ? 'Host' : 'Player'}</p>
+        <p><strong>${t('common.role')}:</strong> ${isHost ? t('common.host') : t('common.player')}</p>
         <p>
-          <strong>Status:</strong>
+          <strong>${t('common.status')}:</strong>
           <connection-status class="room-status-badge" status=${connectionStatus} variant="inline"></connection-status>
         </p>
         ${statusMeta.detail ? html`<p class="muted small room-status-detail">${statusMeta.detail}</p>` : html``}
-        ${inLobby ? html`<p><strong>Players:</strong> ${lobbyPlayerCount} / ${lobbyMaxPlayers}</p>` : html``}
-        ${errorMessage ? html`<p style="color:#b00020;"><strong>Error:</strong> ${errorMessage}</p>` : html``}
+        ${inLobby ? html`<p><strong>${t('common.players')}:</strong> ${lobbyPlayerCount} / ${lobbyMaxPlayers}</p>` : html``}
+        ${errorMessage ? html`<p style="color:#b00020;"><strong>${t('common.error')}:</strong> ${errorMessage}</p>` : html``}
       </div>
 
       <div class="room-hub-actions">
@@ -174,11 +175,11 @@ export function renderRoomHub({
           ${inLobby && startControl?.showButton
             ? html`
                 <button ?disabled=${startControl.disabled} @click=${() => onStartGame?.()}>
-                  Start Game
+                  ${t('common.start_game')}
                 </button>
               `
             : html``}
-          <button class="secondary" @click=${() => onLeave()}>Leave Room</button>
+          <button class="secondary" @click=${() => onLeave()}>${t('common.leave_room')}</button>
         </div>
         ${inLobby && startControl?.helper
           ? html`<p class="muted small room-hub-helper">${startControl.helper}</p>`

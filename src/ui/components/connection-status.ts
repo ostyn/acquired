@@ -5,14 +5,15 @@
 
 import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { connectionStatusLabel, subscribeToLocaleChanges } from '../i18n';
 
 const STATUS_META = {
-  connected: { label: 'Connected', tone: 'positive' },
-  online: { label: 'Online', tone: 'positive' },
-  connecting: { label: 'Connecting', tone: 'warning' },
-  disconnected: { label: 'Disconnected', tone: 'negative' },
-  offline: { label: 'Offline', tone: 'negative' },
-  idle: { label: 'Idle', tone: 'neutral' },
+  connected: { tone: 'positive' },
+  online: { tone: 'positive' },
+  connecting: { tone: 'warning' },
+  disconnected: { tone: 'negative' },
+  offline: { tone: 'negative' },
+  idle: { tone: 'neutral' },
 } as const;
 
 const SUPPORTED_STATUSES = new Set(Object.keys(STATUS_META));
@@ -114,12 +115,29 @@ export class ConnectionStatus extends LitElement {
   @property({ type: Boolean, attribute: 'hide-text' })
   hideText = false;
 
+  private localeUnsubscribe: (() => void) | null = null;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.localeUnsubscribe = subscribeToLocaleChanges(() => {
+      this.requestUpdate();
+    });
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this.localeUnsubscribe) {
+      this.localeUnsubscribe();
+      this.localeUnsubscribe = null;
+    }
+  }
+
   private getStatusMeta() {
     const statusKey = normalizeStatus(this.status);
     const meta = STATUS_META[statusKey];
     return {
       tone: meta.tone,
-      label: this.customLabel?.trim() || meta.label,
+      label: this.customLabel?.trim() || connectionStatusLabel(statusKey),
     };
   }
 

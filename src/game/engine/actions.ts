@@ -14,7 +14,7 @@ import {
   isTilePlayable,
   recalculateSizes,
 } from './board';
-import { describeBuy, ensureLobbySettings, getChain, getPlayer } from './helpers';
+import { describeBuy, ensureLobbySettings, errorResult, getChain, getPlayer, pushLogEvent } from './helpers';
 import {
   absorbUnincorporatedInto,
   advanceMergerStep,
@@ -30,17 +30,17 @@ function applyTilePlacement(state: GameState, player, tileId: string): ActionRes
   const playability = getTilePlayability(state, tileId);
   if (playability !== 'playable') {
     if (playability === 'permanently_unplayable') {
-      return { ok: false, error: 'This tile would merge two safe chains and is permanently unplayable.' };
+      return errorResult('error.tile_merges_safe_chains_unplayable');
     }
     if (playability === 'temporarily_unplayable') {
-      return { ok: false, error: 'This tile would create an eighth chain and is temporarily unplayable.' };
+      return errorResult('error.tile_creates_eighth_chain_unplayable');
     }
-    return { ok: false, error: 'Tile is not playable.' };
+    return errorResult('error.tile_not_playable');
   }
 
   const handIndex = player.tiles.indexOf(tileId);
   if (handIndex === -1) {
-    return { ok: false, error: 'Tile is not in your hand.' };
+    return errorResult('error.tile_not_in_hand');
   }
 
   player.tiles.splice(handIndex, 1);
@@ -60,23 +60,35 @@ function applyTilePlacement(state: GameState, player, tileId: string): ActionRes
         choices: available,
       };
       state.phase = PHASES.AWAIT_FOUND_CHAIN;
-      state.log.push(`${player.name} must found a new chain.`);
+      pushLogEvent(
+        state,
+        'player_must_found_chain',
+        { playerId: player.id, playerName: player.name },
+      );
       return { ok: true };
     }
 
     if (cluster.length >= 2 && !available.length) {
       if (settings.allowDeadTilePlacementAsUnincorporated) {
         state.phase = PHASES.AWAIT_BUY;
-        state.log.push(`${player.name} places ${tileId} as unincorporated (all chains already active).`);
+        pushLogEvent(
+          state,
+          'player_placed_unincorporated_all_active',
+          { playerId: player.id, playerName: player.name, tileId },
+        );
         return { ok: true };
       }
       delete state.board[tileId];
       player.tiles.push(tileId);
-      return { ok: false, error: 'This tile would create an eighth chain and is temporarily unplayable.' };
+      return errorResult('error.tile_creates_eighth_chain_unplayable');
     }
 
     state.phase = PHASES.AWAIT_BUY;
-    state.log.push(`${player.name} places ${tileId} as unincorporated.`);
+    pushLogEvent(
+      state,
+      'player_placed_unincorporated',
+      { playerId: player.id, playerName: player.name, tileId },
+    );
     return { ok: true };
   }
 
@@ -85,7 +97,17 @@ function applyTilePlacement(state: GameState, player, tileId: string): ActionRes
     absorbUnincorporatedInto(state, tileId, chainId);
     recalculateSizes(state);
     state.phase = PHASES.AWAIT_BUY;
-    state.log.push(`${player.name} grows ${state.hotels[chainId].name} with ${tileId}.`);
+    pushLogEvent(
+      state,
+      'player_grew_chain',
+      {
+        playerId: player.id,
+        playerName: player.name,
+        chainId,
+        chainName: state.hotels[chainId].name,
+        tileId,
+      },
+    );
     return { ok: true };
   }
 
@@ -107,7 +129,11 @@ function applyTilePlacement(state: GameState, player, tileId: string): ActionRes
     currentDecisionPlayerId: null,
   };
 
-  state.log.push(`${player.name} triggers a merger with ${tileId}.`);
+  pushLogEvent(
+    state,
+    'player_triggered_merger',
+    { playerId: player.id, playerName: player.name, tileId },
+  );
 
   if (survivors.length === 1) {
     setSurvivingChainAndAdvance(state, survivors[0]);
@@ -121,15 +147,15 @@ function applyTilePlacement(state: GameState, player, tileId: string): ActionRes
 function resolveFoundChain(state: GameState, actorId: string, chainId: string): ActionResult {
   const pending = state.pending;
   if (!pending || pending.type !== 'found_chain') {
-    return { ok: false, error: 'No chain founding decision is pending.' };
+    return errorResult('error.no_chain_founding_pending');
   }
 
   if (pending.founderId !== actorId) {
-    return { ok: false, error: 'Only the active founder can choose the chain.' };
+    return errorResult('error.only_active_founder_choose_chain');
   }
 
   if (!pending.choices.includes(chainId)) {
-    return { ok: false, error: 'Selected chain is not available.' };
+    return errorResult('error.selected_chain_not_available');
   }
 
   for (const tile of pending.tiles) {
@@ -138,7 +164,7 @@ function resolveFoundChain(state: GameState, actorId: string, chainId: string): 
 
   const chain = getChain(state, chainId);
   if (!chain) {
-    return { ok: false, error: 'Selected chain does not exist.' };
+    return errorResult('error.selected_chain_not_exist');
   }
 
   chain.active = true;
@@ -146,15 +172,33 @@ function resolveFoundChain(state: GameState, actorId: string, chainId: string): 
 
   const founder = getPlayer(state, actorId);
   if (!founder) {
-    return { ok: false, error: 'Founder not found.' };
+    return errorResult('error.founder_not_found');
   }
 
   if (chain.availableShares > 0) {
     founder.stocks[chainId] += 1;
     chain.availableShares -= 1;
-    state.log.push(`${founder.name} founds ${chain.name} and takes 1 free share.`);
+    pushLogEvent(
+      state,
+      'player_founded_chain_free_share',
+      {
+        playerId: founder.id,
+        playerName: founder.name,
+        chainId,
+        chainName: chain.name,
+      },
+    );
   } else {
-    state.log.push(`${founder.name} founds ${chain.name}.`);
+    pushLogEvent(
+      state,
+      'player_founded_chain',
+      {
+        playerId: founder.id,
+        playerName: founder.name,
+        chainId,
+        chainName: chain.name,
+      },
+    );
   }
 
   state.pending = null;
@@ -165,15 +209,15 @@ function resolveFoundChain(state: GameState, actorId: string, chainId: string): 
 function resolveMergerSurvivor(state: GameState, actorId: string, chainId: string): ActionResult {
   const pending = state.pending;
   if (!pending || pending.type !== 'merger') {
-    return { ok: false, error: 'No merger survivor decision is pending.' };
+    return errorResult('error.no_merger_survivor_pending');
   }
 
   if (state.currentPlayerId !== actorId) {
-    return { ok: false, error: 'Only the active player may choose the survivor.' };
+    return errorResult('error.only_active_player_choose_survivor');
   }
 
   if (!pending.survivorChoices.includes(chainId)) {
-    return { ok: false, error: 'Selected survivor is not valid.' };
+    return errorResult('error.selected_survivor_invalid');
   }
 
   setSurvivingChainAndAdvance(state, chainId);
@@ -183,19 +227,19 @@ function resolveMergerSurvivor(state: GameState, actorId: string, chainId: strin
 function resolveMergerDefunctChoice(state: GameState, actorId: string, chainId: string): ActionResult {
   const pending = state.pending;
   if (!pending || pending.type !== 'merger') {
-    return { ok: false, error: 'No merger defunct-chain choice is pending.' };
+    return errorResult('error.no_merger_defunct_choice_pending');
   }
 
   if (state.phase !== PHASES.AWAIT_MERGER_DEFUNCT_ORDER) {
-    return { ok: false, error: 'Defunct-chain order is not expected right now.' };
+    return errorResult('error.defunct_order_not_expected');
   }
 
   if (state.currentPlayerId !== actorId) {
-    return { ok: false, error: 'Only the merging player may choose defunct-chain order.' };
+    return errorResult('error.only_merging_player_choose_defunct_order');
   }
 
   if (!pending.defunctOrderChoices.includes(chainId)) {
-    return { ok: false, error: 'Selected defunct chain is not valid.' };
+    return errorResult('error.selected_defunct_invalid');
   }
 
   pending.currentDefunctChainId = chainId;
@@ -208,15 +252,15 @@ function resolveMergerDefunctChoice(state: GameState, actorId: string, chainId: 
 function resolveMergerDisposition(state: GameState, actorId: string, payload: any): ActionResult {
   const pending = state.pending;
   if (!pending || pending.type !== 'merger') {
-    return { ok: false, error: 'No merger stock decision is pending.' };
+    return errorResult('error.no_merger_stock_pending');
   }
 
   if (state.phase !== PHASES.AWAIT_MERGER_DISPOSITION) {
-    return { ok: false, error: 'Merger stock decisions are not expected right now.' };
+    return errorResult('error.merger_stock_not_expected');
   }
 
   if (pending.currentDecisionPlayerId !== actorId) {
-    return { ok: false, error: 'It is not your merger stock decision.' };
+    return errorResult('error.not_your_merger_stock_decision');
   }
 
   const defunctChainId = pending.currentDefunctChainId;
@@ -226,7 +270,7 @@ function resolveMergerDisposition(state: GameState, actorId: string, payload: an
   const survivor = getChain(state, survivorChainId);
 
   if (!player || !defunct || !survivor) {
-    return { ok: false, error: 'Merger state is invalid.' };
+    return errorResult('error.merger_state_invalid');
   }
 
   const owned = player.stocks[defunctChainId] || 0;
@@ -234,20 +278,20 @@ function resolveMergerDisposition(state: GameState, actorId: string, payload: an
   const requestedTradeFrom = Number(payload.tradeFrom || 0);
 
   if (!Number.isInteger(requestedSell) || requestedSell < 0) {
-    return { ok: false, error: 'Sell quantity must be a non-negative integer.' };
+    return errorResult('error.sell_quantity_non_negative_integer');
   }
 
   if (!Number.isInteger(requestedTradeFrom) || requestedTradeFrom < 0 || requestedTradeFrom % 2 !== 0) {
-    return { ok: false, error: 'Trade quantity must be a non-negative even integer.' };
+    return errorResult('error.trade_quantity_non_negative_even');
   }
 
   if (requestedSell + requestedTradeFrom > owned) {
-    return { ok: false, error: 'You cannot sell/trade more shares than you own.' };
+    return errorResult('error.cannot_sell_trade_more_than_owned');
   }
 
   const tradeTo = requestedTradeFrom / 2;
   if (tradeTo > survivor.availableShares) {
-    return { ok: false, error: 'Bank does not have enough surviving shares for this trade.' };
+    return errorResult('error.not_enough_surviving_shares_for_trade');
   }
 
   if (requestedSell > 0) {
@@ -283,37 +327,37 @@ function resolveMergerDisposition(state: GameState, actorId: string, payload: an
 
 function resolveStockPurchase(state: GameState, actorId: string, chains: string[]): ActionResult {
   if (state.phase !== PHASES.AWAIT_BUY) {
-    return { ok: false, error: 'Stock purchases are not allowed right now.' };
+    return errorResult('error.stock_purchase_not_allowed_now');
   }
 
   if (state.currentPlayerId !== actorId) {
-    return { ok: false, error: 'It is not your turn to buy stocks.' };
+    return errorResult('error.not_your_turn_buy_stocks');
   }
 
   const player = getPlayer(state, actorId);
   if (!player) {
-    return { ok: false, error: 'Player not found.' };
+    return errorResult('error.player_not_found');
   }
 
   const purchases = Array.isArray(chains) ? chains : [];
 
   if (purchases.length > 3) {
-    return { ok: false, error: 'You may buy at most 3 shares per turn.' };
+    return errorResult('error.max_three_shares_per_turn');
   }
 
   for (const chainId of purchases) {
     const chain = getChain(state, chainId);
     if (!chain || !chain.active) {
-      return { ok: false, error: 'You can only buy stock in active chains.' };
+      return errorResult('error.buy_stock_only_active_chains');
     }
 
     if (chain.availableShares < 1) {
-      return { ok: false, error: `${chain.name} has no shares remaining.` };
+      return errorResult('error.chain_has_no_shares_remaining', { chainName: chain.name });
     }
 
     const price = stockPrice(chain, chain.size);
     if (player.cash < price) {
-      return { ok: false, error: `Insufficient cash to buy ${chain.name}.` };
+      return errorResult('error.insufficient_cash_for_chain', { chainName: chain.name });
     }
 
     player.cash -= price;
@@ -322,7 +366,27 @@ function resolveStockPurchase(state: GameState, actorId: string, chains: string[
   }
 
   player.lastBuy = [...purchases];
-  state.log.push(`${player.name} ${purchases.length ? `buys ${describeBuy(purchases)}.` : 'passes stock buying.'}`);
+  if (purchases.length) {
+    pushLogEvent(
+      state,
+      'player_bought_stocks',
+      {
+        playerId: player.id,
+        playerName: player.name,
+        chains: describeBuy(purchases),
+        chainIds: purchases.join('|'),
+      },
+    );
+  } else {
+    pushLogEvent(
+      state,
+      'player_passed_stock_buying',
+      {
+        playerId: player.id,
+        playerName: player.name,
+      },
+    );
+  }
 
   if (canDeclareGameEnd(state) && state.requestGameEndAfterBuy) {
     finalizeGame(state);
@@ -366,31 +430,35 @@ export function applyAction(state: GameState, actorId: string, action: any): Act
   const payload = action || {};
 
   if (state.phase === PHASES.GAME_OVER) {
-    return { ok: false, error: 'Game is over.' };
+    return errorResult('error.game_is_over');
   }
 
   switch (payload.type) {
     case 'PLACE_TILE':
       if (state.phase !== PHASES.AWAIT_TILE) {
-        return { ok: false, error: 'Tile placement is not expected right now.' };
+        return errorResult('error.tile_placement_not_expected');
       }
       if (state.currentPlayerId !== actorId) {
-        return { ok: false, error: 'It is not your turn.' };
+        return errorResult('error.not_your_turn');
       }
       return applyTilePlacement(state, getPlayer(state, actorId), payload.tileId);
 
     case 'SKIP_TILE': {
       if (state.currentPlayerId !== actorId) {
-        return { ok: false, error: 'It is not your turn.' };
+        return errorResult('error.not_your_turn');
       }
       if (!activePlayerCanSkipTile(state)) {
-        return { ok: false, error: 'You can only skip when all of your tiles are unplayable.' };
+        return errorResult('error.skip_only_when_all_unplayable');
       }
       const player = getPlayer(state, actorId);
       if (!player) {
-        return { ok: false, error: 'Player not found.' };
+        return errorResult('error.player_not_found');
       }
-      state.log.push(`${player.name} skips tile placement.`);
+      pushLogEvent(
+        state,
+        'player_skipped_tile_placement',
+        { playerId: player.id, playerName: player.name },
+      );
       state.phase = PHASES.AWAIT_BUY;
       return { ok: true };
     }
@@ -413,34 +481,38 @@ export function applyAction(state: GameState, actorId: string, action: any): Act
 
     case 'DECLARE_END_GAME': {
       if (state.currentPlayerId !== actorId) {
-        return { ok: false, error: 'Only the current player can declare end game.' };
+        return errorResult('error.only_current_player_declare_end_game');
       }
       if (!canDeclareGameEnd(state)) {
-        return { ok: false, error: 'End-game condition is not currently met.' };
+        return errorResult('error.end_game_condition_not_met');
       }
       state.requestGameEndAfterBuy = true;
       const player = getPlayer(state, actorId);
       if (!player) {
-        return { ok: false, error: 'Player not found.' };
+        return errorResult('error.player_not_found');
       }
-      state.log.push(`${player.name} declares end game after this turn.`);
+      pushLogEvent(
+        state,
+        'player_declared_end_game',
+        { playerId: player.id, playerName: player.name },
+      );
       return { ok: true };
     }
 
     case 'END_GAME':
       if (state.phase !== PHASES.AWAIT_BUY) {
-        return { ok: false, error: 'You may only end the game during your buy step.' };
+        return errorResult('error.end_game_only_during_buy_step');
       }
       if (state.currentPlayerId !== actorId) {
-        return { ok: false, error: 'Only the current player can end the game.' };
+        return errorResult('error.only_current_player_end_game');
       }
       if (!canDeclareGameEnd(state)) {
-        return { ok: false, error: 'End-game condition is not currently met.' };
+        return errorResult('error.end_game_condition_not_met');
       }
       state.requestGameEndAfterBuy = true;
       return resolveStockPurchase(state, actorId, []);
 
     default:
-      return { ok: false, error: 'Unknown action type.' };
+      return errorResult('error.unknown_action_type');
   }
 }
