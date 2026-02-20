@@ -9,6 +9,9 @@ describe('lobby panel helpers', () => {
       deadTilesAsUnincorporated: false,
       excelStyleCoordinates: false,
       showPlayerCashOnTurnRail: false,
+      showFullTurnRailLog: false,
+      fastBotTurns: false,
+      botStrategy: 'monte_carlo',
     });
   });
 
@@ -20,6 +23,9 @@ describe('lobby panel helpers', () => {
         allowDeadTilePlacementAsUnincorporated: true,
         excelStyleCoordinates: true,
         showPlayerCashOnTurnRail: true,
+        showFullTurnRailLog: true,
+        fastBotTurns: true,
+        botStrategy: 'random',
       }),
     ).toEqual({
       startingCash: 12000,
@@ -27,6 +33,9 @@ describe('lobby panel helpers', () => {
       deadTilesAsUnincorporated: true,
       excelStyleCoordinates: true,
       showPlayerCashOnTurnRail: true,
+      showFullTurnRailLog: true,
+      fastBotTurns: true,
+      botStrategy: 'random',
     });
   });
 

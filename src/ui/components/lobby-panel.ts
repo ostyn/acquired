@@ -21,6 +21,9 @@ export function normalizeLobbySettings(
     allowDeadTilePlacementAsUnincorporated?: boolean;
     excelStyleCoordinates?: boolean;
     showPlayerCashOnTurnRail?: boolean;
+    showFullTurnRailLog?: boolean;
+    fastBotTurns?: boolean;
+    botStrategy?: string;
   } = {},
 ) {
   return {
@@ -33,6 +36,9 @@ export function normalizeLobbySettings(
     deadTilesAsUnincorporated: Boolean(settings.allowDeadTilePlacementAsUnincorporated),
     excelStyleCoordinates: Boolean(settings.excelStyleCoordinates),
     showPlayerCashOnTurnRail: Boolean(settings.showPlayerCashOnTurnRail),
+    showFullTurnRailLog: Boolean(settings.showFullTurnRailLog),
+    fastBotTurns: Boolean(settings.fastBotTurns),
+    botStrategy: settings.botStrategy === 'random' ? 'random' : 'monte_carlo',
   };
 }
 
@@ -227,6 +233,41 @@ export function renderLobbyPanel({
                   />
                   ${t('lobby.show_cash')}
                 </label>
+                <label class="lobby-toggle-label">
+                  <input
+                    type="checkbox"
+                    .checked=${settings.showFullTurnRailLog}
+                    @change=${(event) =>
+                      onUpdateSettings({
+                        showFullTurnRailLog: event.target.checked,
+                      })}
+                  />
+                  ${t('lobby.full_recent_actions')}
+                </label>
+                <label class="lobby-toggle-label">
+                  <input
+                    type="checkbox"
+                    .checked=${settings.fastBotTurns}
+                    @change=${(event) =>
+                      onUpdateSettings({
+                        fastBotTurns: event.target.checked,
+                      })}
+                  />
+                  ${t('lobby.fast_bots')}
+                </label>
+                <label>
+                  ${t('lobby.bot_strategy_label')}
+                  <select
+                    .value=${settings.botStrategy}
+                    @change=${(event) =>
+                      onUpdateSettings({
+                        botStrategy: event.target.value,
+                      })}
+                  >
+                    <option value="monte_carlo">${t('lobby.bot_strategy_monte_carlo')}</option>
+                    <option value="random">${t('lobby.bot_strategy_random')}</option>
+                  </select>
+                </label>
               </div>
               <p class="muted small">
                 ${t('lobby.dead_tiles_help')}
@@ -247,6 +288,20 @@ export function renderLobbyPanel({
               <p>
                 <strong>${t('lobby.turn_rail_cash_label')}:</strong>
                 ${settings.showPlayerCashOnTurnRail ? t('lobby.shown') : t('lobby.hidden')}
+              </p>
+              <p>
+                <strong>${t('lobby.full_recent_actions')}:</strong>
+                ${settings.showFullTurnRailLog ? t('lobby.shown') : t('lobby.hidden')}
+              </p>
+              <p>
+                <strong>${t('lobby.fast_bots')}:</strong>
+                ${settings.fastBotTurns ? t('lobby.shown') : t('lobby.hidden')}
+              </p>
+              <p>
+                <strong>${t('lobby.bot_strategy_label')}:</strong>
+                ${settings.botStrategy === 'random'
+                  ? t('lobby.bot_strategy_random')
+                  : t('lobby.bot_strategy_monte_carlo')}
               </p>
               ${showTwoPlayerRulesNote ? renderTwoPlayerRulesNote() : html``}
             `}

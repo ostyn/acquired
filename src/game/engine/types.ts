@@ -27,6 +27,9 @@ export type LobbySettings = {
   allowDeadTilePlacementAsUnincorporated: boolean;
   excelStyleCoordinates: boolean;
   showPlayerCashOnTurnRail: boolean;
+  showFullTurnRailLog: boolean;
+  fastBotTurns: boolean;
+  botStrategy: 'random' | 'monte_carlo';
   maxPlayers: number;
   startingCash: number;
 };

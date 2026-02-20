@@ -1,12 +1,61 @@
 /**
  * Responsibility: Renders the rules/price quick-reference card.
- * It transforms stock-price brackets into table rows used by the in-game reference modal.
+ * It transforms share-price brackets and manual sections for in-game reference/manual modals.
  */
 
 import { html } from 'lit';
 import { HOTELS, PRICE_BRACKETS } from '../../game/constants';
 import { renderChainBadge } from './chain-display';
 import { t } from '../i18n';
+
+type ReferenceCardOptions = {
+  onOpenManual?: () => void;
+};
+
+type UserManualCardOptions = {
+  onBackToReference?: () => void;
+};
+
+export function buildManualGlossaryEntries() {
+  return [
+    {
+      term: 'Chain (Hotel Chain)',
+      definition: 'A branded group of connected tiles on the board.',
+    },
+    {
+      term: 'Share',
+      definition: 'One stock certificate in a chain. Players buy and hold shares.',
+    },
+    {
+      term: 'Active Chain',
+      definition: 'A chain currently on the board and available for share purchases.',
+    },
+    {
+      term: 'Safe Chain',
+      definition: 'A chain of size 11+; it cannot be removed by merger.',
+    },
+    {
+      term: 'Defunct Chain',
+      definition: 'A chain removed during a merger after bonuses and share disposition.',
+    },
+    {
+      term: 'Unincorporated Tile',
+      definition: 'A tile on the board that is not currently part of any chain.',
+    },
+  ];
+}
+
+export function buildManualTurnSteps() {
+  return [
+    'Place one tile from your hand.',
+    'If needed, found a chain or resolve a merger.',
+    'Buy up to 3 shares (or pass).',
+    'Draw back up to your normal hand size.',
+  ];
+}
+
+const MANUAL_GLOSSARY = buildManualGlossaryEntries();
+const MANUAL_TURN_STEPS = buildManualTurnSteps();
 
 export function rangeLabel(min, max) {
   if (max === Number.POSITIVE_INFINITY) {
@@ -31,7 +80,7 @@ export function buildReferenceRows() {
 
 const REFERENCE_ROWS = buildReferenceRows();
 
-export function renderReferenceCard() {
+export function renderReferenceCard({ onOpenManual }: ReferenceCardOptions = {}) {
   return html`
     <section class="reference-card">
       <p><strong>${t('reference.turn')}:</strong> ${t('reference.turn_rule')}</p>
@@ -84,6 +133,73 @@ export function renderReferenceCard() {
           </tbody>
         </table>
       </div>
+
+      ${typeof onOpenManual === 'function'
+        ? html`
+            <div class="reference-actions">
+              <button class="secondary" type="button" @click=${() => onOpenManual()}>
+                ${t('room.open_manual')}
+              </button>
+            </div>
+          `
+        : html``}
+    </section>
+  `;
+}
+
+export function renderUserManualCard({ onBackToReference }: UserManualCardOptions = {}) {
+  return html`
+    <section class="reference-card manual-card">
+      <p>
+        The app uses <strong>chain</strong> as the primary board term and <strong>share</strong> for ownership.
+        This matches the original Acquire manual concept of hotel chains and stock certificates.
+      </p>
+
+      <h4>Core Terms</h4>
+      <dl class="manual-definition-list">
+        ${MANUAL_GLOSSARY.map(
+          (entry) => html`
+            <div class="manual-definition-row">
+              <dt>${entry.term}</dt>
+              <dd>${entry.definition}</dd>
+            </div>
+          `,
+        )}
+      </dl>
+
+      <h4>Turn Flow</h4>
+      <ol class="manual-list">
+        ${MANUAL_TURN_STEPS.map((step) => html`<li>${step}</li>`)}
+      </ol>
+
+      <h4>Merge Flow</h4>
+      <ul class="manual-list">
+        <li>The largest adjacent chain survives. Ties are chosen by the active player.</li>
+        <li>Defunct chain bonuses are paid first: majority bonus, then minority bonus.</li>
+        <li>Shareholders of each defunct chain then choose to hold, sell, or trade shares (2-for-1).</li>
+      </ul>
+
+      <h4>Ending The Game</h4>
+      <ul class="manual-list">
+        <li>End game can be declared during a buy step when any chain is size 41+ or all active chains are safe.</li>
+        <li>Final scoring tallies remaining chain bonuses and all remaining shares.</li>
+      </ul>
+
+      <h4>2-Player Rule</h4>
+      <p>
+        The stock market counts as an extra shareholder only for majority/minority bonus calculation.
+        Players still choose share disposition normally.
+      </p>
+
+      ${typeof onBackToReference === 'function'
+        ? html`
+            <div class="reference-actions">
+              <button class="secondary" type="button" @click=${() => onBackToReference()}>
+                ${t('room.back_to_reference')}
+              </button>
+            </div>
+          `
+        : html``}
     </section>
   `;
 }

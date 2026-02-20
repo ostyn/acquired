@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { PRICE_BRACKETS } from '../src/game/constants';
-import { buildReferenceRows, rangeLabel } from '../src/ui/components/reference-card';
+import {
+  buildManualGlossaryEntries,
+  buildManualTurnSteps,
+  buildReferenceRows,
+  rangeLabel,
+} from '../src/ui/components/reference-card';
 
 describe('reference card helpers', () => {
   it('formats chain-size ranges', () => {
@@ -26,5 +31,26 @@ describe('reference card helpers', () => {
       mediumPrice: 1100,
       expensivePrice: 1200,
     });
+  });
+
+  it('defines a consistent chain/share glossary for the manual', () => {
+    const entries = buildManualGlossaryEntries();
+    expect(entries[0]).toEqual({
+      term: 'Chain (Hotel Chain)',
+      definition: 'A branded group of connected tiles on the board.',
+    });
+    expect(entries.find((entry) => entry.term === 'Share')).toEqual({
+      term: 'Share',
+      definition: 'One stock certificate in a chain. Players buy and hold shares.',
+    });
+  });
+
+  it('defines the canonical four-step turn flow for the manual', () => {
+    expect(buildManualTurnSteps()).toEqual([
+      'Place one tile from your hand.',
+      'If needed, found a chain or resolve a merger.',
+      'Buy up to 3 shares (or pass).',
+      'Draw back up to your normal hand size.',
+    ]);
   });
 });

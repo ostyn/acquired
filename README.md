@@ -58,6 +58,18 @@ Monte Carlo bot strength/speed is controlled by these defaults in `src/game/engi
 In short: increasing any of these tends to make the bot stronger and slower; decreasing them makes it faster and weaker.
 For one-off experiments, prefer CLI overrides via `yarn bot:benchmark` flags instead of editing source defaults.
 
+## Terminology
+
+To keep game text consistent with the Acquire manual:
+
+- `Chain` is the primary board term (hotel chain).
+- `Share` is the ownership unit players buy/sell/trade/hold.
+- `Active chain` means currently on board and purchasable.
+- `Safe chain` means size `11+` and cannot be removed in a merger.
+- `Defunct chain` means a chain removed during merger resolution.
+
+In-game, open the **Reference Card** and use **Open user manual** for the longer rules modal.
+
 ## Architecture
 
 - `src/game/engine.ts`: authoritative Acquire rules engine

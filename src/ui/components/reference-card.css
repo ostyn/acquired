@@ -30,6 +30,12 @@
   margin-bottom: 0.4rem;
 }
 
+.reference-actions {
+  margin-top: 0.9rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -45,6 +51,34 @@
   white-space: normal;
   padding: 0.3rem 0.45rem;
   vertical-align: top;
+}
+
+.manual-card h4 {
+  margin-top: 0.95rem;
+}
+
+.manual-list {
+  margin: 0 0 0.2rem 1.2rem;
+}
+
+.manual-list li {
+  margin-bottom: 0.28rem;
+}
+
+.manual-definition-list {
+  margin: 0;
+}
+
+.manual-definition-row {
+  margin-bottom: 0.45rem;
+}
+
+.manual-definition-row dt {
+  font-weight: 700;
+}
+
+.manual-definition-row dd {
+  margin-left: 0;
 }
 
 @media (max-width: 768px) {

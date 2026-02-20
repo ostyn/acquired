@@ -55,7 +55,7 @@ describe('game hud helpers', () => {
             'Game started.',
             'Alex buys Tower, Tower.',
             'Blake places C3 as unincorporated.',
-            'Blake passes stock buying.',
+            'Blake passes share buying.',
             'Alex must found a new chain.',
           ],
         },
@@ -63,8 +63,37 @@ describe('game hud helpers', () => {
       ),
     ).toEqual([
       'Alex must found a new chain.',
-      'Blake passes stock buying.',
+      'Blake passes share buying.',
       'Blake places C3 as unincorporated.',
+    ]);
+  });
+
+  it('can return globally recent actions when full-log mode is enabled', () => {
+    expect(
+      getTurnRailLogEntries(
+        {
+          players: [
+            { id: 'p1', name: 'Alex' },
+            { id: 'p2', name: 'Blake' },
+          ],
+          log: [
+            'Lobby created.',
+            'Game started.',
+            'Alex buys Tower, Tower.',
+            'Blake places C3 as unincorporated.',
+            'Blake passes share buying.',
+            'Alex must found a new chain.',
+          ],
+        },
+        'p1',
+        4,
+        true,
+      ),
+    ).toEqual([
+      'Alex must found a new chain.',
+      'Blake passes share buying.',
+      'Blake places C3 as unincorporated.',
+      'Alex buys Tower, Tower.',
     ]);
   });
 
@@ -100,6 +129,32 @@ describe('game hud helpers', () => {
             { key: 'player_placed_unincorporated', params: { playerId: 'p2', playerName: 'Blake', tileId: 'C3' } },
             { key: 'player_passed_stock_buying', params: { playerId: 'p2', playerName: 'Blake' } },
             { key: 'player_must_found_chain', params: { playerId: 'p1', playerName: 'Alex' } },
+          ],
+        },
+        'p1',
+      ),
+    ).toEqual([
+      'Alex must found a new chain.',
+      'Blake passes share buying.',
+      'Blake places C3 as unincorporated.',
+    ]);
+  });
+
+  it('still recognizes legacy "passes stock buying" entries for slice boundaries', () => {
+    expect(
+      getTurnRailLogEntries(
+        {
+          players: [
+            { id: 'p1', name: 'Alex' },
+            { id: 'p2', name: 'Blake' },
+          ],
+          log: [
+            'Lobby created.',
+            'Game started.',
+            'Alex buys Tower.',
+            'Blake places C3 as unincorporated.',
+            'Blake passes stock buying.',
+            'Alex must found a new chain.',
           ],
         },
         'p1',

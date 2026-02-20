@@ -185,12 +185,18 @@ describe('acquire engine extra coverage', () => {
       maxPlayers: 4,
       allowDeadTilePlacementAsUnincorporated: true,
       showPlayerCashOnTurnRail: true,
+      showFullTurnRailLog: true,
+      fastBotTurns: true,
+      botStrategy: 'random',
     });
     expect(hostAttempt.ok).toBe(true);
     expect(state.settings.startingCash).toBe(12000);
     expect(state.settings.maxPlayers).toBe(4);
     expect(state.settings.allowDeadTilePlacementAsUnincorporated).toBe(true);
     expect(state.settings.showPlayerCashOnTurnRail).toBe(true);
+    expect(state.settings.showFullTurnRailLog).toBe(true);
+    expect(state.settings.fastBotTurns).toBe(true);
+    expect(state.settings.botStrategy).toBe('random');
   });
 
   it('rejects invalid starting money values', () => {

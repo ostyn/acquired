@@ -45,7 +45,7 @@ export function getTurnRailChains(state) {
   return [...active, ...inactive];
 }
 
-export function getTurnRailLogEntries(state, localPlayerId, limit = TURN_RAIL_LOG_LIMIT) {
+export function getTurnRailLogEntries(state, localPlayerId, limit = TURN_RAIL_LOG_LIMIT, showFullLog = false) {
   if (!state) {
     return [];
   }
@@ -54,6 +54,9 @@ export function getTurnRailLogEntries(state, localPlayerId, limit = TURN_RAIL_LO
   const events = Array.isArray(state.logEvents) ? state.logEvents : [];
   if (events.length) {
     const fallback = events.slice(-cappedLimit).map((event) => formatLogEvent(event)).reverse();
+    if (showFullLog) {
+      return fallback;
+    }
 
     if (!localPlayerId) {
       return fallback;
@@ -83,6 +86,9 @@ export function getTurnRailLogEntries(state, localPlayerId, limit = TURN_RAIL_LO
 
   const entries = state.log;
   const fallback = entries.slice(-cappedLimit).reverse();
+  if (showFullLog) {
+    return fallback;
+  }
 
   if (!localPlayerId || !Array.isArray(state.players)) {
     return fallback;
@@ -96,7 +102,7 @@ export function getTurnRailLogEntries(state, localPlayerId, limit = TURN_RAIL_LO
 
   // A turn ends on buy/pass. Showing entries after this marker yields a compact
   // "what happened while you were waiting" timeline.
-  const endTurnPattern = new RegExp(`^${escapeRegex(localName)} (buys .+\\.|passes stock buying\\.)$`);
+  const endTurnPattern = new RegExp(`^${escapeRegex(localName)} (buys .+\\.|passes (?:share|stock) buying\\.)$`);
   let startIndex = 0;
   for (let index = entries.length - 1; index >= 0; index -= 1) {
     if (endTurnPattern.test(entries[index])) {
@@ -121,7 +127,8 @@ export function renderGameHud({
   const instruction = turnInstruction(legal, actorName);
   const orderedPlayers = getTurnRailPlayers(state);
   const orderedChains = getTurnRailChains(state);
-  const recent = getTurnRailLogEntries(state, localPlayerId);
+  const showFullTurnRailLog = Boolean(state?.settings?.showFullTurnRailLog);
+  const recent = getTurnRailLogEntries(state, localPlayerId, TURN_RAIL_LOG_LIMIT, showFullTurnRailLog);
   const showPlayerCash = Boolean(state?.settings?.showPlayerCashOnTurnRail);
 
   return html`

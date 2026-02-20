@@ -77,6 +77,6 @@ describe('turn utils', () => {
         },
         'Guest',
       ),
-    ).toBe('Waiting for Guest to resolve merger stock.');
+    ).toBe('Waiting for Guest to resolve merger shares.');
   });
 });

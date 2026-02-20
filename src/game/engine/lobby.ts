@@ -13,6 +13,7 @@ import {
   ensureLobbySettings,
   getStartingCash,
   initialStocks,
+  normalizeBotStrategy,
   normalizeMaxPlayers,
   normalizeStartingCash,
   pushLogEvent,
@@ -25,6 +26,9 @@ export function createLobbyState({ roomId, hostPlayer }: { roomId: string; hostP
     allowDeadTilePlacementAsUnincorporated: false,
     excelStyleCoordinates: false,
     showPlayerCashOnTurnRail: false,
+    showFullTurnRailLog: false,
+    fastBotTurns: false,
+    botStrategy: 'monte_carlo' as const,
     maxPlayers: MAX_PLAYER_COUNT,
     startingCash: 6000,
   };
@@ -123,6 +127,21 @@ export function setLobbySettings(state: GameState, actorId: string, settingsPatc
 
   if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'showPlayerCashOnTurnRail')) {
     next.showPlayerCashOnTurnRail = Boolean(settingsPatch.showPlayerCashOnTurnRail);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'showFullTurnRailLog')) {
+    next.showFullTurnRailLog = Boolean(settingsPatch.showFullTurnRailLog);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'fastBotTurns')) {
+    next.fastBotTurns = Boolean(settingsPatch.fastBotTurns);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'botStrategy')) {
+    const strategy = normalizeBotStrategy(settingsPatch.botStrategy);
+    if (strategy) {
+      next.botStrategy = strategy;
+    }
   }
 
   if (Object.prototype.hasOwnProperty.call(settingsPatch || {}, 'maxPlayers')) {

@@ -27,7 +27,7 @@ import { renderChainPanel } from './components/chain-market';
 import { renderGameHud } from './components/game-hud';
 import { renderLobbyPanel } from './components/lobby-panel';
 import { renderModal } from './components/modal';
-import { renderReferenceCard } from './components/reference-card';
+import { renderReferenceCard, renderUserManualCard } from './components/reference-card';
 import { renderRoomHub } from './components/room-hub';
 import { getActiveThemeMode, toggleThemeMode, type ThemeMode } from './theme';
 import { appPath, extractRoomIdFromPath } from './routes';
@@ -77,6 +77,9 @@ export class RoomPage extends LitElement {
 
   @state()
   private referenceModalOpen = false;
+
+  @state()
+  private manualModalOpen = false;
 
   @state()
   private autoJoinAttemptedRoomId = '';
@@ -243,10 +246,26 @@ export class RoomPage extends LitElement {
 
   private openReferenceModal() {
     this.referenceModalOpen = true;
+    this.manualModalOpen = false;
   }
 
   private closeReferenceModal() {
     this.referenceModalOpen = false;
+    this.manualModalOpen = false;
+  }
+
+  private openManualModal() {
+    this.manualModalOpen = true;
+    this.referenceModalOpen = false;
+  }
+
+  private closeManualModal() {
+    this.manualModalOpen = false;
+  }
+
+  private returnToReferenceCard() {
+    this.manualModalOpen = false;
+    this.referenceModalOpen = true;
   }
 
   private startLobbyNameEdit(playerId: string, currentName: string) {
@@ -550,9 +569,29 @@ export class RoomPage extends LitElement {
       return html``;
     }
 
+    if (this.manualModalOpen) {
+      return html`
+        ${renderModal(
+          t('room.user_manual'),
+          renderUserManualCard({
+            onBackToReference: () => this.returnToReferenceCard(),
+          }),
+          () => this.closeManualModal(),
+          'modal-large',
+        )}
+      `;
+    }
+
     return html`
       ${this.referenceModalOpen
-        ? renderModal(t('room.quick_reference'), renderReferenceCard(), () => this.closeReferenceModal(), 'modal-large')
+        ? renderModal(
+            t('room.quick_reference'),
+            renderReferenceCard({
+              onOpenManual: () => this.openManualModal(),
+            }),
+            () => this.closeReferenceModal(),
+            'modal-large',
+          )
         : html``}
     `;
   }
@@ -652,7 +691,7 @@ export class RoomPage extends LitElement {
       ? Number(state.settings.maxPlayers)
       : 6;
     const roomPanelLabel = this.roomHubPanelOpen ? t('room.hide_panel') : t('room.show_panel');
-    const showReferenceToggle = !inLobby && state.phase !== PHASES.GAME_OVER;
+    const showReferenceToggle = !inLobby;
     const showRoomPanelToggle = !inLobby;
     const referenceToggleLabel = this.referenceModalOpen
       ? t('room.hide_reference')

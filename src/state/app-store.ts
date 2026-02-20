@@ -31,6 +31,8 @@ const GUEST_INITIAL_STATE_TIMEOUT_MS = 15000;
 const MAX_PLAYER_NAME_LENGTH = 24;
 const BOT_THINK_BASE_MS = 550;
 const BOT_THINK_JITTER_MS = 550;
+const FAST_BOT_THINK_BASE_MS = 120;
+const FAST_BOT_THINK_JITTER_MS = 180;
 const DEFAULT_BOT_STRATEGY = BOT_STRATEGIES.MONTE_CARLO;
 const DEFAULT_ICE_SERVERS = [
   {
@@ -154,6 +156,13 @@ function normalizePlayerName(value) {
     return "";
   }
   return trimmed.slice(0, MAX_PLAYER_NAME_LENGTH);
+}
+
+function resolveBotStrategy(rawValue) {
+  if (rawValue === BOT_STRATEGIES.RANDOM) {
+    return BOT_STRATEGIES.RANDOM;
+  }
+  return BOT_STRATEGIES.MONTE_CARLO;
 }
 
 function readRoomIdentities() {
@@ -1158,7 +1167,10 @@ class AppStore {
       return;
     }
 
-    const delay = BOT_THINK_BASE_MS + Math.floor(Math.random() * BOT_THINK_JITTER_MS);
+    const fastBotTurns = Boolean(this.hostState.settings?.fastBotTurns);
+    const thinkBase = fastBotTurns ? FAST_BOT_THINK_BASE_MS : BOT_THINK_BASE_MS;
+    const thinkJitter = fastBotTurns ? FAST_BOT_THINK_JITTER_MS : BOT_THINK_JITTER_MS;
+    const delay = thinkBase + Math.floor(Math.random() * thinkJitter);
     this.botTurnTimerHandle = setTimeout(() => {
       this.botTurnTimerHandle = null;
 
@@ -1179,7 +1191,8 @@ class AppStore {
         return;
       }
 
-      const botAction = chooseBotAction(this.hostState, actingBot.id, DEFAULT_BOT_STRATEGY);
+      const botStrategy = resolveBotStrategy(this.hostState.settings?.botStrategy || DEFAULT_BOT_STRATEGY);
+      const botAction = chooseBotAction(this.hostState, actingBot.id, botStrategy);
       if (!botAction) {
         return;
       }

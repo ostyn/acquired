@@ -16,6 +16,8 @@ import { EN_MESSAGES } from '../../locales/en';
 import type { ActionResult, GameLogEvent, GameLogKey, GameLogParams, GameState, LobbySettings, PlayerState, Stocks } from './types';
 import type { HotelBankEntry } from '../utils';
 
+const BOT_STRATEGIES = new Set(['random', 'monte_carlo']);
+
 export function initialStocks(): Stocks {
   const stocks: Stocks = {};
   for (const hotel of HOTELS) {
@@ -29,9 +31,19 @@ export function defaultLobbySettings(): LobbySettings {
     allowDeadTilePlacementAsUnincorporated: false,
     excelStyleCoordinates: false,
     showPlayerCashOnTurnRail: false,
+    showFullTurnRailLog: false,
+    fastBotTurns: false,
+    botStrategy: 'monte_carlo',
     maxPlayers: MAX_PLAYER_COUNT,
     startingCash: STARTING_CASH,
   };
+}
+
+export function normalizeBotStrategy(value: unknown): LobbySettings['botStrategy'] | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  return BOT_STRATEGIES.has(value) ? (value as LobbySettings['botStrategy']) : null;
 }
 
 export function normalizeStartingCash(value: number): number | null {
@@ -69,6 +81,9 @@ export function ensureLobbySettings(state: GameState): LobbySettings {
     allowDeadTilePlacementAsUnincorporated: Boolean(current.allowDeadTilePlacementAsUnincorporated),
     excelStyleCoordinates: Boolean(current.excelStyleCoordinates),
     showPlayerCashOnTurnRail: Boolean(current.showPlayerCashOnTurnRail),
+    showFullTurnRailLog: Boolean(current.showFullTurnRailLog),
+    fastBotTurns: Boolean(current.fastBotTurns),
+    botStrategy: normalizeBotStrategy(current.botStrategy) ?? defaults.botStrategy,
     maxPlayers: normalizedMaxPlayers ?? defaults.maxPlayers,
     startingCash: normalizedStartingCash ?? defaults.startingCash,
   };
@@ -78,6 +93,9 @@ export function ensureLobbySettings(state: GameState): LobbySettings {
     || state.settings.allowDeadTilePlacementAsUnincorporated !== next.allowDeadTilePlacementAsUnincorporated
     || state.settings.excelStyleCoordinates !== next.excelStyleCoordinates
     || state.settings.showPlayerCashOnTurnRail !== next.showPlayerCashOnTurnRail
+    || state.settings.showFullTurnRailLog !== next.showFullTurnRailLog
+    || state.settings.fastBotTurns !== next.fastBotTurns
+    || state.settings.botStrategy !== next.botStrategy
     || state.settings.maxPlayers !== next.maxPlayers
     || state.settings.startingCash !== next.startingCash
   ) {
